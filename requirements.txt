@@ -1,0 +1,7 @@
+torch-geometric
+fastcoref
+transformers
+nltk
+spacy
+pyvis==0.1.9
+disjoint_set

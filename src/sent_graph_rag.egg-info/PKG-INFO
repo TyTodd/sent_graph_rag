@@ -1,3 +1,34 @@
+Metadata-Version: 2.2
+Name: sent_graph_rag
+Version: 0.1.0
+Summary: Sentence Graph RAG system for enhanced retrieval augmented generation
+Author-email: Tyrin Todd <swagginty@gmail.com>
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: spacy>=3.0.0
+Requires-Dist: fastcoref
+Requires-Dist: pyarrow
+Requires-Dist: pandas
+Requires-Dist: sentence-transformers
+Requires-Dist: torch>=1.7.0
+Requires-Dist: transformers
+Requires-Dist: datasets
+Requires-Dist: pyvis==0.1.9
+Requires-Dist: disjoint_set
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Provides-Extra: visualization
+Requires-Dist: networkx; extra == "visualization"
+Requires-Dist: matplotlib; extra == "visualization"
+
 # SentGraph Rag
 ## ToDo
 - test out using Avro instead of parquet
@@ -82,22 +113,20 @@ Converts a graph dataset to a answer path dataset used for model training
 ### LSTMExplorer
 
 ## Installation
-Create Conda Environment (Required for graph-tool)
+Create Conda Environment (Recomended)
 ```
-conda create --name sent_graph_rag -c conda-forge graph-tool python=3.11.11
+conda create -n my_env python=3.10
 ```
+Install graph tool
+```
+!wget https://downloads.skewed.de/skewed-keyring/skewed-keyring_1.0_all_$(lsb_release -s -c).deb
+!dpkg -i skewed-keyring_1.0_all_$(lsb_release -s -c).deb
+!echo "deb [signed-by=/usr/share/keyrings/skewed-keyring.gpg] https://downloads.skewed.de/apt $(lsb_release -s -c) main" > /etc/apt/sources.list.d/skewed.list
+!apt-get update
+!apt-get install python3-graph-tool python3-matplotlib python3-cairo
+```
+
 Install Spacy NLP model
 ```
 python -m spacy download en_core_web_sm
 ```
-# Engaging Usage Notes
-```
-srun -N 1 -n 1 --pty /bin/bash
-```
-
-# Satori Usage Notes
-Start interactive session
-```
-srun --gres=gpu:1 -N 1 --mem=100G  --time 12:00:00  --pty /bin/bash
-```
-Allocates 1 GPU, 100GB of memory, and 12 hours of time.
