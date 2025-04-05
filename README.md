@@ -85,6 +85,12 @@ Converts a graph dataset to a answer path dataset used for model training
 Create Conda Environment (Required for graph-tool)
 ```
 conda create --name sent_graph_rag -c conda-forge graph-tool python=3.11.11
+conda activate sent_graph_rag
+
+```
+Install sent_graph_rag
+```
+pip install -e Desktop/sent_graph_rag
 ```
 Install Spacy NLP model
 ```

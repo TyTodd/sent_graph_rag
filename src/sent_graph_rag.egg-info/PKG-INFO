@@ -1,4 +1,4 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: sent_graph_rag
 Version: 0.1.0
 Summary: Sentence Graph RAG system for enhanced retrieval augmented generation
@@ -113,20 +113,28 @@ Converts a graph dataset to a answer path dataset used for model training
 ### LSTMExplorer
 
 ## Installation
-Create Conda Environment (Recomended)
+Create Conda Environment (Required for graph-tool)
 ```
-conda create -n my_env python=3.10
-```
-Install graph tool
-```
-!wget https://downloads.skewed.de/skewed-keyring/skewed-keyring_1.0_all_$(lsb_release -s -c).deb
-!dpkg -i skewed-keyring_1.0_all_$(lsb_release -s -c).deb
-!echo "deb [signed-by=/usr/share/keyrings/skewed-keyring.gpg] https://downloads.skewed.de/apt $(lsb_release -s -c) main" > /etc/apt/sources.list.d/skewed.list
-!apt-get update
-!apt-get install python3-graph-tool python3-matplotlib python3-cairo
-```
+conda create --name sent_graph_rag -c conda-forge graph-tool python=3.11.11
+conda activate sent_graph_rag
 
+```
+Install sent_graph_rag
+```
+pip install -e Desktop/sent_graph_rag
+```
 Install Spacy NLP model
 ```
 python -m spacy download en_core_web_sm
 ```
+# Engaging Usage Notes
+```
+srun -N 1 -n 1 --pty /bin/bash
+```
+
+# Satori Usage Notes
+Start interactive session
+```
+srun --gres=gpu:1 -N 1 --mem=100G  --time 12:00:00  --pty /bin/bash
+```
+Allocates 1 GPU, 100GB of memory, and 12 hours of time.

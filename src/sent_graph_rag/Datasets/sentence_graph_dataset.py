@@ -8,7 +8,7 @@ import time
 import graph_tool as gt
 import logging
 from disjoint_set import DisjointSet
-
+from .readers import DatasetReader
 class SentenceGraphCreator:
 	def __init__(self, nlp, verbose = False):
 		self.nlp = nlp
@@ -258,3 +258,6 @@ class SentenceGraphCreator:
 	def create_entity_vector(self, text):
 		# TODO: Replace this with a model that generates embeddings for entities
 		return np.random.rand(self.entity_vector_length)
+
+
+    
