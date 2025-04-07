@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, TypedDict, Iterator
 import json
+import os
 
 class QAS(TypedDict):
     question: str
@@ -22,6 +23,7 @@ class DatasetReader(ABC):
         """
         Initializes the dataset reader.
         """
+        self.file_path = file_path
         pass
     
     @abstractmethod
@@ -43,6 +45,12 @@ class DatasetReader(ABC):
         Returns the number of rows in the dataset.
         """
         pass
+    def get_file_name(self) -> str:
+        """
+        Returns the file name of the dataset.
+        """
+        return os.path.splitext(os.path.basename(self.file_path))[0]
+        
 
 class SQUADReader(DatasetReader):
     """
@@ -57,8 +65,9 @@ class SQUADReader(DatasetReader):
     def read(self) -> Iterator[Row]:
         for topic in self.squad_data["data"]:
             for paragraph in topic["paragraphs"]:
-                yield Row(context=paragraph["context"], qas=paragraph["qas"])
+                yield {"context": paragraph["context"], "qas": paragraph["qas"]}
     
     def __len__(self) -> int:
         return self.data_length
+    
         
