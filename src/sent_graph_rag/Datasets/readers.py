@@ -45,7 +45,7 @@ class DatasetReader(ABC):
         Returns the number of rows in the dataset.
         """
         pass
-    def get_file_name(self) -> str:
+    def get_name(self) -> str:
         """
         Returns the file name of the dataset.
         """
