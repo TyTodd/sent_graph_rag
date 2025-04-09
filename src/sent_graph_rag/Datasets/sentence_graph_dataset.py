@@ -22,6 +22,7 @@ from .embedder import get_qas_entities, add_embeddings_to_graphs, get_query_embe
 from typing import List, Tuple, Dict, Union, Optional, Iterator
 from .language_models import LanguageModel, EmbeddingModel, SpacyModel
 from io import BytesIO
+import shutil
 
 temp_dataset_schema = {
     "type": "record",
