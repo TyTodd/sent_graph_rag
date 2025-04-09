@@ -17,7 +17,7 @@ class EdgeProperties(TypedDict):
     entity2: str
     terminal: bool
 
-class Graph(ABC, Generic[V, E]):
+class SentenceGraph(ABC, Generic[V, E]):
     @abstractmethod
     def add_vertex(self, properties: VertexProperties) -> V:
         """Add a vertex to the graph with the given properties."""
@@ -26,11 +26,6 @@ class Graph(ABC, Generic[V, E]):
     @abstractmethod
     def add_edge(self, source: V, target: V, properties: EdgeProperties) -> E:
         """Add an edge to the graph with the given properties."""
-        pass
-
-    @abstractmethod
-    def init_embedding_property(self) -> None:
-        """Initializes the embedding property for the graph."""
         pass
 
     @abstractmethod
@@ -82,8 +77,34 @@ class Graph(ABC, Generic[V, E]):
         pass
     
     @abstractmethod
-    def get_filtered_vertices(self, filter: Callable[[V], bool]) -> Iterator[V]:
-        """Returns an iterator over the vertices that match the filter."""
+    def set_vertex_filter(self, filter: Callable[[V], bool]) -> None:
+        """Sets the filter for the vertices."""
+        pass
+    
+    @abstractmethod
+    def set_edge_filter(self, filter: Callable[[E], bool], filter_unconnected_vertices: bool = False) -> None:
+        """Sets the filter for the edges."""
+        pass
+    
+    @abstractmethod
+    def clear_filters(self) -> None:
+        """Clears the filters"""
+        pass
+    
+    @abstractmethod
+    def iter_filtered_vertices(self) -> Iterator[V]:
+        """Iterates over the vertices that match the filters."""
+        pass
+    
+    @abstractmethod
+    def iter_filtered_edges(self) -> Iterator[E]:
+        """Iterates over the edges that match the filters."""
+        pass
+    
+    
+    @abstractmethod
+    def get_edge_embeddings(self) -> tuple[torch.Tensor, Iterator[E]]:
+        """Returns the embeddings for the edges. The first element of the tuple is a tensor of the embeddings and the second element is an iterator over the edges."""
         pass
     
     @abstractmethod
@@ -92,6 +113,16 @@ class Graph(ABC, Generic[V, E]):
         pass
     
     @abstractmethod
-    def get_edge_embeddings(self) -> tuple[torch.Tensor, Iterator[E]]:
-        """Returns the embeddings for the edges. The first element of the tuple is a tensor of the embeddings and the second element is an iterator over the edges."""
+    def set_edge_weights(self, weights: torch.Tensor):
+        """Sets the weights for the edges."""
+        pass
+    
+    @abstractmethod
+    def shortest_path(self, start_node: V, end_node: V) -> tuple[List[V], List[E]]:
+        """Returns the shortest path between the start and end node."""
+        pass
+    
+    @abstractmethod
+    def edge_endpoints(self, edge: E) -> tuple[V, V]:
+        """Returns the source and target of the edge."""
         pass
