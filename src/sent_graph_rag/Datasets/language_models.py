@@ -6,27 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Union, Optional
 import time
 from sentence_transformers import SentenceTransformer
-
-class LanguageModel:
-    def __init__(self, spacy_model: str = "en_core_web_sm", embedding_model: EmbeddingModel = None, device: str = None):
-        """
-        spacy_model: Name of the spacy model to use (defaults to 'en_core_web_sm')
-        embedding_model: Embedding model to use (defaults to 'sentence-transformers/all-MiniLM-L6-v2')
-        device: Device to use for embedding model (optional: chooses cuda if available) 
-        """
-        if device is None:
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.device = device
-        
-        if embedding_model is None:
-            self.embedding_model = SentenceTransformerEmbeddingModel('sentence-transformers/all-MiniLM-L6-v2', device=self.device)
-        else:
-            self.embedding_model = embedding_model
-        self.spacy_model = SpacyModel(spacy_model, device)
-        
-
-    def get_embeddings(self, texts: List[str]):
-        return self.embedding_model.embed_text(text)
+from datasets.utils.logging import disable_progress_bar
     
 class EmbeddingModel(ABC):
     @abstractmethod
@@ -152,3 +132,25 @@ class SpacyModel():
                              - '{spacy_model}' is installed 
                              - '{device}' is available
                              - 'fastcoref' is installed""")
+
+
+class LanguageModel:
+    def __init__(self, spacy_model: str = "en_core_web_sm", embedding_model: Optional[EmbeddingModel] = None, device: Optional[str] = None):
+        """
+        spacy_model: Name of the spacy model to use (defaults to 'en_core_web_sm')
+        embedding_model: Embedding model to use (defaults to 'sentence-transformers/all-MiniLM-L6-v2')
+        device: Device to use for embedding model (optional: chooses cuda if available) 
+        """
+        if device is None:
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = device
+        
+        if embedding_model is None:
+            self.embedding_model = SentenceTransformerEmbeddingModel('sentence-transformers/all-MiniLM-L6-v2', device=self.device)
+        else:
+            self.embedding_model = embedding_model
+        self.spacy_model = SpacyModel(spacy_model, device)
+        
+
+    def get_embeddings(self, texts: List[str]):
+        return self.embedding_model.get_embeddings(texts)
