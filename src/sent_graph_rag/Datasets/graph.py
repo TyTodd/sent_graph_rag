@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Dict, Any, TypedDict, List, Iterator, Callable, Union, Literal
+from typing import TypeVar, Generic, Dict, Any, TypedDict, List, Iterator, Callable, Union, Literal, Type, Tuple
 import torch
 import numpy as np
 V = TypeVar('V')  # Vertex
 E = TypeVar('E')  # Edge
 import igraph as ig
+import io
 
 try:
     import graph_tool as gt
@@ -126,7 +127,7 @@ class SentenceGraph(ABC, Generic[V, E]):
         pass
     
     @abstractmethod
-    def set_edge_weights(self, weights: torch.Tensor):
+    def set_edge_weights(self, weights: List[float]):
         """Sets the weights for the edges."""
         pass
     
@@ -139,6 +140,43 @@ class SentenceGraph(ABC, Generic[V, E]):
     def edge_endpoints(self, edge: E) -> tuple[V, V]:
         """Returns the source and target of the edge."""
         pass
+    
+    @abstractmethod
+    def get_neighbors(self, vertex: V) -> Iterator[V]:
+        """Returns all the neighbors of the vertex."""
+        pass
+    
+    @abstractmethod
+    def to_bytes(self)-> bytes:
+        """Returns the graph as a bytes object."""
+        pass
+    
+    @classmethod
+    @abstractmethod
+    def from_bytes(cls, data: bytes) -> "SentenceGraph":
+        """Loads the graph from a bytes object."""
+        pass
+    
+    @abstractmethod
+    def get_weight(self, edge: E, ) -> float:
+        """Returns the weight of the edge."""
+        pass
+    
+    def path_length(self, path: Tuple[List[V], List[E]]) -> float:
+        """Returns the length of the path."""
+        _ , edge_list = path
+        return sum(self.get_weight(edge) for edge in edge_list)
+    
+    @abstractmethod
+    def get_edges(self, vertex: V) -> Iterator[E]:
+        """Returns the edges from the vertex."""
+        pass
+    
+    @abstractmethod
+    def is_edge(self, component: Union[V, E]) -> bool:
+        """Returns True if the component is an edge."""
+        pass
+    
 
 # TODO: Warning: all functions run as if the graph is filtered in as opposed to the igraph graph where the only view you get of filters is through iter_filtered_vertices() and iter_filtered_edges()
 class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
@@ -252,14 +290,14 @@ class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
         self.graph.clear_filters()
     
     def get_edge_embeddings(self) -> tuple[torch.Tensor, Iterator["gt.Edge"]]:
-        return self.graph.edge_properties["embedding"], self.graph.edges()
+        return self.graph.edge_properties["embedding"].get_2d_array().T, self.graph.edges()
     
     def get_vertex_embeddings(self) -> tuple[torch.Tensor, Iterator["gt.Vertex"]]:
-        return self.graph.vertex_properties["embedding"], self.graph.vertices()
+        return self.graph.vertex_properties["embedding"].get_2d_array().T, self.graph.vertices()
     
-    def set_edge_weights(self, weights: torch.Tensor) -> None:
+    def set_edge_weights(self, weights: List[float]) -> None:
         self.edge_weights = self.graph.new_edge_property("float")
-        self.edge_weights.set_values(list(weights))
+        self.edge_weights.set_values(weights)
     
     def shortest_paths(self, start_node: "gt.Vertex", end_nodes: List["gt.Vertex"]) -> tuple[List["gt.Vertex"], List["gt.Edge"]]:
         paths = []
@@ -270,7 +308,25 @@ class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
     
     def edge_endpoints(self, edge: "gt.Edge") -> tuple["gt.Vertex", "gt.Vertex"]:
         return edge.source(), edge.target()
-
+    
+    def to_bytes(self)-> bytes:
+        buffer = io.BytesIO()
+        self.graph.save(buffer)
+        return buffer.getvalue()
+    
+    def get_neighbors(self, vertex: "gt.Vertex") -> Iterator["gt.Vertex"]:
+        return vertex.all_neighbors()
+    
+    @classmethod
+    def from_bytes(cls: Type["GraphToolSentenceGraph"], data: bytes) -> "GraphToolSentenceGraph":
+        buffer = io.BytesIO(data)
+        graph = cls(corpus="")
+        graph.graph.load(buffer)
+        return graph
+    
+    def get_weight(self, edge: "gt.Edge") -> float:
+        return self.edge_weights[edge]
+        
 IGraphVertex = Union[int, ig.Vertex]
 IGraphEdge = Union[int, ig.Edge]
 
@@ -359,15 +415,17 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
         self.filtered_edges = self.graph.es.select(None)
 
     def get_edge_embeddings(self) -> tuple[torch.Tensor, Iterator[IGraphEdge]]:
+        # TODO: Make sure shape is correct (num_edges, embedding_dim)
         embeddings = self.filtered_edges["embedding"]
         return torch.tensor(np.array(embeddings)), self.filtered_edges
     
     def get_vertex_embeddings(self) -> tuple[torch.Tensor, Iterator[IGraphVertex]]:
+        # TODO: Make sure shape is correct (num_vertices, embedding_dim)
         embeddings = self.filtered_vertices["embedding"]
         return torch.tensor(np.array(embeddings)), self.filtered_vertices
     
-    def set_edge_weights(self, weights: torch.Tensor) -> None:
-        self.edge_weights = weights.tolist()
+    def set_edge_weights(self, weights: List[float]) -> None:
+        self.edge_weights = weights
         
     
     def shortest_paths(self, start_node: IGraphVertex, end_nodes: List[IGraphVertex]) -> tuple[List[IGraphVertex], List[IGraphEdge]]:
@@ -387,7 +445,26 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
         return list(zip(vertex_lists, edge_lists))
     def edge_endpoints(self, edge: IGraphEdge) -> tuple[IGraphVertex, IGraphVertex]:
         return self.graph.es[edge].source, self.graph.es[edge].target
+
+    def get_neighbors(self, vertex: IGraphVertex) -> Iterator[IGraphVertex]:
+        return vertex.neighbors(mode="all")
     
+    def to_bytes(self)-> bytes:
+        buf = io.BytesIO()
+        self.graph.write_graphml(buf)
+        data = buf.getvalue()
+        return data
+    
+    @classmethod
+    def from_bytes(cls: Type["IGraphSentenceGraph"], data: bytes) -> "IGraphSentenceGraph":
+        buf = io.BytesIO(data)
+        graph = cls(corpus="")
+        graph.graph = ig.Graph.Read_GraphML(buf)
+        return graph
+    
+    def get_weight(self, edge: IGraphEdge) -> float:
+        return self.edge_weights[edge.index]
+        
             
         
     

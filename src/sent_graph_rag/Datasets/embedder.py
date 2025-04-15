@@ -4,10 +4,11 @@ import gc
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Union, Optional
 from .language_models import EmbeddingModel, SpacyModel
+from .graph import SentenceGraph
 
-def add_embeddings_to_graph(graph, embedding_model, chunk_size=None):
+def add_embeddings_to_graph(graph: SentenceGraph, embedding_model: EmbeddingModel, chunk_size: Optional[int] = None):
     """
-    Adds embeddings to a graph
+    Adds embeddings to a graph using a given embedding model.
     """
     if chunk_size is None:
         chunk_size = max(graph.num_vertices(), graph.num_edges())
@@ -15,14 +16,14 @@ def add_embeddings_to_graph(graph, embedding_model, chunk_size=None):
     vertex_labels = []
     processed_nodes = 0
     all_vertex_embeddings = torch.empty(embedding_model.dim, 0)
-    for index, vt in enumerate(graph.vertices()):
-        if not graph.vertex_properties["terminal"][vt]:
-            vertex_labels.append(graph.vertex_properties["label"][vt])
-        else:
-            vt_neighbors = vt.all_neighbors()
-            first_adjacent_node = next(vt_neighbors)
+    for index, vt in enumerate(graph.iter_vertices()):
+        if not graph.vertex_is_terminal(vt):
+            vertex_labels.append(graph.get_vertex_property(vt, "label"))
+        else: #TODO: When handling terminal nodes maybe we shouldn't give them the same embeddings as their corresponding non-terminal node. Maybe a 0 embedding? Or a learned stop embedding?
+            vt_neighbors = graph.get_neighbors(vt)
+            first_adjacent_node = next(vt_neighbors) 
             vertex_labels.append(
-                graph.vertex_properties["label"][first_adjacent_node]
+                graph.get_vertex_property(vt, "label")
             )
 
         if len(vertex_labels) >= chunk_size or (
@@ -34,11 +35,7 @@ def add_embeddings_to_graph(graph, embedding_model, chunk_size=None):
                 (all_vertex_embeddings, vertex_embeddings)
             )
             vertex_labels = []
-
-    graph.vertex_properties["embedding"] = graph.new_vertex_property(
-        "vector<float>"
-    )
-    graph.vertex_properties["embedding"].set_2d_array(all_vertex_embeddings)
+    graph.add_vertex_embeddings(all_vertex_embeddings)
 
     # Free up memory
     del all_vertex_embeddings, vertex_embeddings
@@ -59,15 +56,14 @@ def add_embeddings_to_graph(graph, embedding_model, chunk_size=None):
                 (all_edge_embeddings, edge_embeddings)
             )
             edge_labels = []
-
-    graph.edge_properties["embedding"] = graph.new_edge_property("vector<float>")
-    graph.edge_properties["embedding"].set_2d_array(all_edge_embeddings)
+    
+    graph.add_edge_embeddings(all_edge_embeddings)
 
     # Free up memory
     del all_edge_embeddings, edge_embeddings
     torch.cuda.empty_cache()
 
-def add_embeddings_to_graphs(graphs, embedding_model, chunk_size=None):
+def add_embeddings_to_graphs(graphs: List[SentenceGraph], embedding_model: EmbeddingModel, chunk_size: Optional[int] = None):
     """
     Adds embeddings to multiple graphs
     """
@@ -81,13 +77,13 @@ def add_embeddings_to_graphs(graphs, embedding_model, chunk_size=None):
     all_vertex_embeddings = torch.empty(embedding_model.get_dim(), 0)
     for g_index, graph in enumerate(graphs):
         for v_index, vt in enumerate(graph.vertices()):
-            if not graph.vertex_properties["terminal"][vt]:
-                vertex_labels.append(graph.vertex_properties["label"][vt])
+            if not graph.get_vertex_property(vt, "terminal"):
+                vertex_labels.append(graph.get_vertex_property(vt, "label"))
             else:
-                vt_neighbors = vt.all_neighbors()
+                vt_neighbors = graph.get_neighbors(vt)
                 first_adjacent_node = next(vt_neighbors)
                 vertex_labels.append(
-                    graph.vertex_properties["label"][first_adjacent_node]
+                    graph.get_vertex_property(first_adjacent_node, "label")
                 )
             num_processed += 1
 
@@ -105,12 +101,7 @@ def add_embeddings_to_graphs(graphs, embedding_model, chunk_size=None):
     cur_index = 0
     for graph in graphs:
         end_index = cur_index + graph.num_vertices()
-        graph.vertex_properties["embedding"] = graph.new_vertex_property(
-            "vector<float>"
-        )
-        graph.vertex_properties["embedding"].set_2d_array(
-            all_vertex_embeddings[:, cur_index:end_index]
-        )
+        graph.add_vertex_embeddings(all_vertex_embeddings[:, cur_index:end_index])
         cur_index = end_index
 
     # Free up memory
@@ -138,12 +129,7 @@ def add_embeddings_to_graphs(graphs, embedding_model, chunk_size=None):
     cur_index = 0
     for graph in graphs:
         end_index = cur_index + graph.num_edges()
-        graph.edge_properties["embedding"] = graph.new_edge_property(
-            "vector<float>"
-        )
-        graph.edge_properties["embedding"].set_2d_array(
-            all_edge_embeddings[:, cur_index:end_index]
-        )
+        graph.add_edge_embeddings(all_edge_embeddings[:, cur_index:end_index])
         cur_index = end_index
 
     # Free up memory

@@ -59,7 +59,7 @@ class EmbeddingModel(ABC):
         pass
 
 class SentenceTransformerEmbeddingModel(EmbeddingModel):
-    def __init__(self, model_name: str, device: str = None):
+    def __init__(self, model_name: str, device: Optional[str] = None):
         """
         model_name: Name of the sentence transformer model to use (defaults to 'sentence-transformers/all-MiniLM-L6-v2')
         device: Device to use for embedding model (optional: chooses cuda if available) 
@@ -69,6 +69,9 @@ class SentenceTransformerEmbeddingModel(EmbeddingModel):
         else:
             self.device = device
         self.model_name = model_name
+        self.load()
+        self.embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
+        self.unload()
 
     def get_embeddings(self, texts):
         """
@@ -89,6 +92,9 @@ class SentenceTransformerEmbeddingModel(EmbeddingModel):
         del self.embedding_model
         gc.collect()
         torch.cuda.empty_cache()
+    
+    def get_dim(self):
+        return self.embedding_dim
 
 
 class TransformersEmbeddingModel(EmbeddingModel):
