@@ -6,6 +6,8 @@ V = TypeVar('V')  # Vertex
 E = TypeVar('E')  # Edge
 import igraph as ig
 import io
+from spacy.tokens import Doc
+from .graph_creation import create_graph_from_doc
 
 try:
     import graph_tool as gt
@@ -159,7 +161,7 @@ class SentenceGraph(ABC, Generic[V, E]):
         pass
     
     @abstractmethod
-    def get_weight(self, edge: E, ) -> float:
+    def get_weight(self, edge: E) -> float:
         """Returns the weight of the edge."""
         pass
     
@@ -179,67 +181,15 @@ class SentenceGraph(ABC, Generic[V, E]):
         pass
     
     @staticmethod
-    def from_data(eid_name_map, unique_entities,  doc, reference_eid_map, eid_label_map, sentence_ref_map, eid_alias_map, graph_type: Literal["igraph", "graph-tool"] = "igraph", verbose = False):
-        id_to_vertex = {}
-        graph = None
+    def from_doc(doc: Doc, graph_type: Literal["igraph", "graph-tool"] = "igraph") -> "SentenceGraph":
         if graph_type == "igraph":
-            graph = IGraphSentenceGraph(doc.text)
+            return create_graph_from_doc(IGraphSentenceGraph, doc)
         elif graph_type == "graph-tool":
-            graph = GraphToolSentenceGraph(doc.text)
+            return create_graph_from_doc(GraphToolSentenceGraph, doc)
+        else:
+            raise ValueError(f"Invalid graph type: {graph_type}")
 
-        added_edges = set()
-        #TODO: Find a way to not have to loop through every edge twice.
-        # Now build graph
-        pairs = {}
-        for entity_id in unique_entities:
-            #iterate through each reference and draw sentence edges between all entities in sentence
-            for reference1_loc in unique_entities[entity_id]:
-                reference1 = doc.char_span(reference1_loc[0], reference1_loc[1], alignment_mode="contract")
-                entity_id1 = reference_eid_map[reference1]
-                if entity_id1 not in id_to_vertex: # if we havents created a vertex for this entity_id yet create one
-                    v1 = graph.add_vertex({"id": entity_id1, "label": eid_name_map[entity_id1], "terminal": False, "ner_label": eid_label_map[entity_id1], "aliases": list(eid_alias_map[entity_id1])})
-                    id_to_vertex[entity_id1] = v1
 
-                sentence = reference1.sent
-                num_diff_entities = 0
-                for reference2_loc in sentence_ref_map[sentence]:
-                    reference2 = doc.char_span(reference2_loc.start_char, reference2_loc.end_char, alignment_mode="contract")
-                    entity_id2 = reference_eid_map[reference2]
-
-                    if entity_id1 != entity_id2:
-                        num_diff_entities += 1
-
-                    if entity_id2 not in id_to_vertex: # if we haven't created a vertex for this entity_id yet create one
-                        v2 = graph.add_vertex({"id": entity_id2, "label": eid_name_map[entity_id2], "terminal": False, "ner_label": eid_label_map[entity_id2], "aliases": list(eid_alias_map[entity_id2])})
-                        id_to_vertex[entity_id2] = v2
-
-                    edge_hash = frozenset([sentence.text, entity_id1, entity_id2])
-                    if reference1.start < reference2.start and entity_id1 != entity_id2 and edge_hash not in added_edges: #only add edge if reference1 comes before reference2 so we don't have duplicate edges
-                        sentence_offset = sentence.start_char
-                        ent1_location = (reference1.start_char - sentence_offset, reference1.end_char - sentence_offset)
-                        ent2_location = (reference2.start_char - sentence_offset, reference2.end_char - sentence_offset)
-
-                        v1 = id_to_vertex[entity_id1]
-                        v2 = id_to_vertex[entity_id2]
-                        e1 = graph.add_edge(v1, v2, {"sentence": sentence.text, "entity1": list(ent1_location), "entity2": list(ent2_location), "terminal": False})
-
-                        pairs.setdefault(frozenset([entity_id1, entity_id2]), 0)
-                        pairs[frozenset([entity_id1, entity_id2])] += 1
-                        added_edges.add(edge_hash)
-                if num_diff_entities < 1: # draw edge from entity to terminal node
-                    terminal_id = graph.vertex_properties["id"][v1] + "_TERMINAL"
-                    if terminal_id not in id_to_vertex:
-                        v2 = graph.add_vertex({"id": terminal_id, "label": "terminal_node", "terminal": True, "ner_label": "none", "aliases": ["terminal_node"]})
-                        id_to_vertex[terminal_id] = v2
-
-                    v2 = id_to_vertex[terminal_id]
-
-                    sentence_offset = sentence.start_char
-                    ent1_location = (reference1.start_char - sentence_offset, reference1.end_char - sentence_offset)
-                    e1 = graph.add_edge(v1, v2, {"sentence": sentence.text, "entity1": list(ent1_location), "entity2": list(ent1_location), "terminal": True})
-        graph.id_to_vertex = id_to_vertex
-        return graph
-    
 
 # TODO: Warning: all functions run as if the graph is filtered in as opposed to the igraph graph where the only view you get of filters is through iter_filtered_vertices() and iter_filtered_edges()
 class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
@@ -527,6 +477,11 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
     
     def get_weight(self, edge: IGraphEdge) -> float:
         return self.edge_weights[edge.index]
+    
+    def get_edges(self, vertex: IGraphVertex) -> Iterator[IGraphEdge]:
+        return vertex.all_edges()
+    def is_edge(self, component: Union[IGraphVertex, IGraphEdge]) -> bool:
+        return isinstance(component, ig.Edge)
         
             
         
