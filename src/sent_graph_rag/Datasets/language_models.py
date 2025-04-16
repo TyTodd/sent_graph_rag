@@ -116,7 +116,7 @@ class TransformersEmbeddingModel(EmbeddingModel):
         return embeddings
 
 class SpacyModel():
-    def __init__(self, spacy_model: str = "en_core_web_sm", device: str = None):
+    def __init__(self, spacy_model: str = "en_core_web_sm", device: Optional[str] = None):
         if device is None:
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.device = device
