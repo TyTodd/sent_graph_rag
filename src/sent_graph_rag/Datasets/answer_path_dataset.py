@@ -143,7 +143,7 @@ def get_similarity_weights(graph, query_embedding):
 
   # Step 3: Compute cosine similarities
   cosine_similarities = np.dot(edge_embeddings_norm, query_norm.T).flatten()  # Shape: [num_edges]
-  remapped_similarities = (cosine_similarities + 1) / 2
+  remapped_similarities = 1 - ((cosine_similarities + 1) / 2) # remap to [0, 1] 0 is most similar 1 is least similar
   
   return list(remapped_similarities)
   # edge_weights = graph.new_edge_property("float")
@@ -181,7 +181,7 @@ class AnswerPathDataset(Dataset):
     
 
   @classmethod
-  def from_graph_dataset(self, graph_dataset: Union[SentenceGraphDataset, str], out_path: Union[str, Path], verbose: bool = False):
+  def from_graph_dataset(self, graph_dataset: Union[SentenceGraphDataset, str], out_path: Union[str, Path], verbose: bool = False, k: int = 3):
     if isinstance(graph_dataset, str):
       graph_dataset = SentenceGraphDataset.from_graph_dataset(graph_dataset, verbose)
     embedding_dim = graph_dataset.metadata["embedding_dim"]
@@ -194,7 +194,7 @@ class AnswerPathDataset(Dataset):
     
     env = lmdb.open(out_path, map_size=dataset_size)
     with env.begin(write=True) as txn:
-      for i, sample in enumerate(get_answer_path_rows(graph_dataset)):
+      for i, sample in enumerate(get_answer_path_rows(graph_dataset,k)):
         txn.put(str(i).encode(), pickle.dumps(sample))
         
     answer_path_dataset = AnswerPathDataset(out_path, verbose)
@@ -203,7 +203,7 @@ class AnswerPathDataset(Dataset):
     
     
   
-def get_answer_path_rows(graph_dataset: SentenceGraphDataset):
+def get_answer_path_rows(graph_dataset: SentenceGraphDataset, k: int = 3):
   for record in graph_dataset:
     graph = record["graph"]
     all_queries = record["queries"]
@@ -211,7 +211,7 @@ def get_answer_path_rows(graph_dataset: SentenceGraphDataset):
     all_query_embeddings = record["query_embeddings"]
     all_answer_entities = record["answer_entities"]
     all_answers = record["answers"]
-    answer_paths = extract_answer_paths_from_entities(graph, all_queries, all_query_entities, all_query_embeddings, all_answer_entities, all_answers)
+    answer_paths = extract_answer_paths_from_entities(graph, all_queries, all_query_entities, all_query_embeddings, all_answer_entities, all_answers, k)
     expanded_answer_paths = expand_answer_path_data(answer_paths)
     for row in expanded_answer_paths:
       yield row
@@ -268,7 +268,7 @@ def get_target_nodes(answer_entities: List[str], answers: List[str], graph: Sent
   graph: gt.Graph to search in
   matching: The matching method to use
     exact_match - only looks for nodes whose aliases are an exact match for the answer
-    edge_entity_match - everything above but if exact_match fails returns nodes whose entities match the answer connected to edges that contain the answer
+    edge_entity_match - everything above but if exact_match fails returns nodes whose aliases match the answer entities connected to edges that contain the answer
     edge_match - everything above but if edge_entity_match fails returns EDGES whose sentences contain the answer
     entity_match - everything above but if edge_match fails returns nodes whose aliases match the answer entities
   """
@@ -306,6 +306,7 @@ def get_target_nodes(answer_entities: List[str], answers: List[str], graph: Sent
   graph.set_edge_filter("sentence", filter_fn = edge_match, filter_unconnected_vertices=True)
   matched_edges = [e for e in graph.iter_edges()]
   #Now that edges not containing the answer are filtered out find filter out nodes that are no longer connected
+  # (We do this step with filter_unconnected_vertices=True)
 
   #Now get all nodes which have entity matches
   graph.set_vertex_filter("aliases", filter_fn = entity_match)
@@ -330,7 +331,7 @@ def get_target_nodes(answer_entities: List[str], answers: List[str], graph: Sent
 
 def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[str], all_query_entities: List[List[str]], 
                                         all_query_embeddings: List[np.ndarray], all_answer_entities: List[List[str]], 
-                                        all_answers: List[List[str]]) -> List[Tuple[np.ndarray, List[List[List[np.ndarray]]]]]:
+                                        all_answers: List[List[str]], k: int = 3) -> List[Tuple[np.ndarray, List[List[List[np.ndarray]]]]]:
   """
   Extract answer paths from entities and embeddings
   Returns:
@@ -348,7 +349,7 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
     answers = all_answers[q_index]
 
     # start = time.time()
-    source_nodes = get_source_nodes(graph, query_entities, query_embedding, k = 3)
+    source_nodes = get_source_nodes(graph, query_entities, query_embedding, k = k)
     # print("Found Source nodes", time.time() - start)
     # start = time.time()
     targets, targets_are_edges = get_target_nodes(answer_entities, answers, graph, matching = "edge_match")

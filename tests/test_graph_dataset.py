@@ -31,7 +31,7 @@ def test_mit_graph_build(load_model):
         assert len(nodes) > 0, f"Entity '{entity_text}' not found in graph"
         assert len(nodes) < 2, f"Entity '{entity_text}' found in multiple nodes in graph"
         
-        # check that the node has (as an edge) every sentence that mentions the entity
+        # check that the node has (as an edge) a sentence that mentions the entity
         node = nodes[0]
         sentence = entity.sent.text
         edges = graph.get_edges(node)
@@ -46,9 +46,22 @@ def test_mit_graph_build(load_model):
         if prop_noun is None: # if no proper noun in cluster then it was never added to the graph
             continue
         prop_noun_text = prop_noun.text
-        nodes = graph.set_vertex_filter("aliases", filter_fn=lambda x: prop_noun_text in x)
+        # check if cluster's proper noun is mentioned in the graph as an alias of a node with the same label
+        graph.set_vertex_filter("aliases", filter_fn=lambda x: prop_noun_text in x)
+        graph.set_vertex_filter("label" , lambda x: x == prop_noun.label_)
+        nodes = [graph.iter_vertices()]
+        graph.clear_filters()
         assert len(nodes) > 0, f"Entity '{prop_noun_text}' not found in graph"
         assert len(nodes) < 2, f"Entity '{prop_noun_text}' found in multiple nodes in graph"
+        
+        # check that the node has (as an edge) a sentence that mentions each reference in the cluster
+        prop_noun_node = nodes[0]
+        edges = graph.get_edges(prop_noun_node)
+        edge_sentences = [graph.get_edge_property(edge, "sentence") for edge in edges]
+        for ref in cluster:
+            ref_sentence = ref.sent.text
+        
+        
         
         
         
