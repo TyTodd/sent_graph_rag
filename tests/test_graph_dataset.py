@@ -55,7 +55,39 @@ def test_mit_graph_build(load_model):
         
         
         
+def test_graph_dataset(load_model):
+    '''
+    1. make test.json -- add dummy info using 1 of guide.json
+        needs 20 rows (dicts)
+    2. Make Dataset reader -- override init read and len 
+    3. Test:
+        graph is correct, have output dataset and check 
+        each row of each together checking 
+        function in Graph class that will tak
+
+
+
+        (1) Take context run through language model (load_model)
+            docs = load_model.spacy_model.nlp.pipe([context, question, answers])
+            graph = SentenceGraph.from_doc(docs[0], "igraph") --> graph 1
+
+            Check to make sure graph matches the graph (2) produced
+            Make sure answers is answers and questions is questions -- all of them
+                question_entities is docs[1].ents --> have to convert to strings (currently a list of span Objects) use .text
+                question_embedding: 
+                with load_model.embedding_model as em:
+                    em.get_emeddings([question])
+
+    for embeddings -- need to be within a certain range (0.001)
+
+    '''
+    # Dataset Reader --- DatasetReader()
     
+    with open("test.json", "r") as f:
+        text = f.read()
+    docs = load_model.spacy_model.nlp.pipe([context, question, answers])
+    graph = SentenceGraph.from_doc(docs[0], "igraph")
+    pass
     
     
     

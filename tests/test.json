@@ -1,0 +1,481 @@
+[
+    {
+      "context": "The water cycle, also known as the hydrologic cycle, describes the continuous movement of water on, above, and below the surface of the Earth. This cycle includes processes such as evaporation, condensation, precipitation, infiltration, runoff, and subsurface flow. Water evaporates from oceans, lakes, and rivers due to solar energy. This vapor then condenses to form clouds, which eventually lead to precipitation in the form of rain or snow. Some of the precipitation infiltrates the ground and replenishes groundwater, while the rest flows over the land as runoff and returns to bodies of water. The water cycle is essential for sustaining life on Earth by distributing fresh water, regulating temperature, and supporting plant growth. Human activities like deforestation and urbanization can disrupt this natural cycle by affecting infiltration and increasing runoff. Climate change is also altering precipitation patterns and increasing the frequency of extreme weather events, making understanding the water cycle more important than ever.",
+      "qas": [
+        {
+          "question": "What is another name for the water cycle?",
+          "answers": [
+            "the hydrologic cycle"
+          ]
+        },
+        {
+          "question": "What process involves water vapor forming clouds?",
+          "answers": [
+            "condensation"
+          ]
+        },
+        {
+          "question": "What does precipitation replenish when it infiltrates the ground?",
+          "answers": [
+            "groundwater"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The Roman Empire was one of the most powerful civilizations in history, dominating much of Europe, North Africa, and the Middle East for over 500 years. It began in 27 BC when Augustus became the first emperor and officially marked the end of the Roman Republic. Roman law, engineering, architecture, and military organization had a lasting influence on later societies. Cities across the empire were connected by a vast network of roads, which facilitated trade, communication, and military movement. The Romans built aqueducts to bring water to urban centers and public baths to promote hygiene. Latin, the language of the Romans, became the foundation for many modern European languages. The empire eventually split into Eastern and Western regions. The Western Roman Empire fell in 476 AD, but the Eastern Roman Empire, known as the Byzantine Empire, lasted for nearly another thousand years.",
+      "qas": [
+        {
+          "question": "Who was the first emperor of the Roman Empire?",
+          "answers": [
+            "Augustus"
+          ]
+        },
+        {
+          "question": "What did Roman aqueducts supply?",
+          "answers": [
+            "water"
+          ]
+        },
+        {
+          "question": "When did the Western Roman Empire fall?",
+          "answers": [
+            "476 AD"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The process of photosynthesis allows green plants to make their own food using sunlight. This takes place mainly in the leaves, where chloroplasts absorb light energy. The process converts carbon dioxide and water into glucose and oxygen, which is released into the atmosphere. Photosynthesis is vital for life on Earth as it is the foundation of the food chain and helps regulate atmospheric gases. In addition to providing energy for the plant itself, glucose can be stored as starch or used to make other substances like cellulose. The rate of photosynthesis depends on factors such as light intensity, carbon dioxide levels, and temperature.",
+      "qas": [
+        {
+          "question": "What do plants produce during photosynthesis?",
+          "answers": [
+            "glucose",
+            "oxygen"
+          ]
+        },
+        {
+          "question": "Where does photosynthesis mainly occur in a plant?",
+          "answers": [
+            "leaves"
+          ]
+        },
+        {
+          "question": "What substance stores energy from photosynthesis?",
+          "answers": [
+            "glucose"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The internet is a global network of interconnected computers that allows users to share information and communicate across vast distances. It originated from a research project funded by the U.S. Department of Defense in the 1960s. Over the decades, it evolved from a military tool to an indispensable part of daily life, enabling access to vast amounts of information, online education, e-commerce, and social interaction. The World Wide Web, invented by Tim Berners-Lee in 1989, allowed for easier navigation using browsers and hyperlinks. Today, billions of people connect to the internet via smartphones, computers, and other devices, often using wireless technology. Internet infrastructure includes physical cables, satellites, data centers, and cloud services. While it has revolutionized the way we live, it also brings concerns such as cybersecurity, digital privacy, and misinformation.",
+      "qas": [
+        {
+          "question": "Who invented the World Wide Web?",
+          "answers": [
+            "Tim Berners-Lee"
+          ]
+        },
+        {
+          "question": "What technology enables wireless internet access?",
+          "answers": [
+            "wireless technology"
+          ]
+        },
+        {
+          "question": "What are some concerns about internet use?",
+          "answers": [
+            "cybersecurity",
+            "digital privacy",
+            "misinformation"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Earthquakes occur when energy stored in the Earth's crust is suddenly released, causing the ground to shake. This usually happens along faults, which are fractures between blocks of rock. The most common cause of earthquakes is the movement of tectonic plates. These plates constantly shift, and when stress along a fault line exceeds the strength of rocks, it results in a rupture and release of seismic energy. The point on the surface directly above the earthquake\u2019s origin is called the epicenter. Earthquakes can be measured using a seismograph and their magnitude is typically reported on the Richter or moment magnitude scale. Depending on their size and location, earthquakes can cause minimal damage or catastrophic destruction, especially in densely populated or poorly constructed areas. Earthquake preparedness includes building codes, early warning systems, and public education campaigns to minimize the risk to human life and infrastructure.",
+      "qas": [
+        {
+          "question": "What is the point on the surface above an earthquake's origin called?",
+          "answers": [
+            "epicenter"
+          ]
+        },
+        {
+          "question": "What device measures earthquakes?",
+          "answers": [
+            "seismograph"
+          ]
+        },
+        {
+          "question": "What causes most earthquakes?",
+          "answers": [
+            "tectonic plate movement"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The Amazon Rainforest is the largest tropical rainforest in the world, covering over 5.5 million square kilometers across nine South American countries. It is home to a staggering diversity of life, including millions of species of plants, insects, birds, and mammals. The Amazon plays a crucial role in regulating the global climate by absorbing vast amounts of carbon dioxide through photosynthesis. Its dense canopy also generates rainfall and helps stabilize local weather patterns. Indigenous communities have lived in the Amazon for thousands of years, maintaining sustainable lifestyles that are now threatened by deforestation, mining, and agricultural expansion. The loss of forest cover has serious implications not only for biodiversity but also for the planet\u2019s climate resilience. Conservation efforts are underway by governments and non-profits to protect this vital ecosystem.",
+      "qas": [
+        {
+          "question": "What is the largest tropical rainforest in the world?",
+          "answers": [
+            "Amazon Rainforest"
+          ]
+        },
+        {
+          "question": "Why is the Amazon important for the global climate?",
+          "answers": [
+            "absorbs carbon dioxide",
+            "regulates climate"
+          ]
+        },
+        {
+          "question": "What threatens the Amazon rainforest?",
+          "answers": [
+            "deforestation",
+            "mining",
+            "agricultural expansion"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Electric vehicles (EVs) are becoming an increasingly popular alternative to traditional gasoline-powered cars. They are powered by electric motors that draw energy from rechargeable battery packs. Unlike internal combustion engines, EVs produce no tailpipe emissions, making them environmentally friendly. The range of electric vehicles\u2014the distance they can travel on a single charge\u2014has improved significantly due to advancements in battery technology. Charging infrastructure has also expanded, with home chargers, public charging stations, and fast chargers available in many urban areas. Governments around the world offer incentives such as tax credits and rebates to encourage EV adoption. However, challenges remain, including battery recycling, high upfront costs, and limited charging stations in rural regions. As technology continues to evolve, EVs are expected to play a major role in reducing carbon emissions and transforming transportation.",
+      "qas": [
+        {
+          "question": "What powers electric vehicles?",
+          "answers": [
+            "electric motors",
+            "battery packs"
+          ]
+        },
+        {
+          "question": "What do EVs not produce from their tailpipes?",
+          "answers": [
+            "emissions"
+          ]
+        },
+        {
+          "question": "What is a challenge for rural EV users?",
+          "answers": [
+            "limited charging stations"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The human digestive system is responsible for breaking down food into nutrients the body can absorb and use for energy, growth, and repair. Digestion begins in the mouth, where enzymes in saliva start breaking down carbohydrates. The food then travels down the esophagus into the stomach, where it is mixed with gastric juices. These juices contain acid and enzymes that continue the digestion of proteins. From there, the partially digested food moves into the small intestine, where most nutrient absorption takes place with the help of bile from the liver and enzymes from the pancreas. The remaining material is passed into the large intestine, where water is absorbed before the waste is expelled. A healthy digestive system relies on proper diet, hydration, and regular exercise.",
+      "qas": [
+        {
+          "question": "Where does digestion begin?",
+          "answers": [
+            "mouth"
+          ]
+        },
+        {
+          "question": "What organ absorbs most nutrients?",
+          "answers": [
+            "small intestine"
+          ]
+        },
+        {
+          "question": "What helps digest proteins in the stomach?",
+          "answers": [
+            "gastric juices",
+            "enzymes"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The moon is Earth\u2019s only natural satellite and plays a significant role in our planet\u2019s natural systems. Its gravitational pull causes ocean tides, with the highest tides occurring during full and new moons due to alignment with the sun. The moon has a surface covered in craters, created by meteor impacts over billions of years. It has no atmosphere to protect it or support life. The same side of the moon always faces Earth due to synchronous rotation. The moon has influenced cultures and calendars for centuries. In 1969, humans first set foot on the moon during NASA\u2019s Apollo 11 mission, a historic achievement in space exploration. Research continues on how the moon could support future space travel and serve as a launch point for missions to Mars and beyond.",
+      "qas": [
+        {
+          "question": "What causes ocean tides on Earth?",
+          "answers": [
+            "the moon's gravitational pull"
+          ]
+        },
+        {
+          "question": "When did humans first land on the moon?",
+          "answers": [
+            "1969"
+          ]
+        },
+        {
+          "question": "Why does the same side of the moon always face Earth?",
+          "answers": [
+            "synchronous rotation"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Climate change refers to long-term shifts in temperatures and weather patterns, mainly caused by human activities such as burning fossil fuels. These actions increase the concentration of greenhouse gases in the atmosphere, leading to global warming. Rising temperatures result in the melting of polar ice, rising sea levels, and more frequent extreme weather events like hurricanes, droughts, and heatwaves. Ecosystems are also under stress, with many species struggling to adapt. Governments and scientists emphasize the need to reduce carbon emissions by transitioning to renewable energy, increasing energy efficiency, and protecting forests. International agreements like the Paris Agreement aim to limit global warming and hold countries accountable for emissions reductions. Climate change is one of the most pressing challenges of our time and requires coordinated global action to address.",
+      "qas": [
+        {
+          "question": "What human activity contributes most to climate change?",
+          "answers": [
+            "burning fossil fuels"
+          ]
+        },
+        {
+          "question": "What agreement aims to limit global warming?",
+          "answers": [
+            "Paris Agreement"
+          ]
+        },
+        {
+          "question": "What is a consequence of rising global temperatures?",
+          "answers": [
+            "melting ice",
+            "sea level rise",
+            "extreme weather"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The process of evolution by natural selection was first proposed by Charles Darwin in the 19th century. It describes how species adapt to their environments over time through the differential survival and reproduction of individuals with advantageous traits. These traits become more common in subsequent generations, leading to gradual changes in the species. Natural selection acts on variations in traits that are often caused by genetic mutations. If a trait helps an organism survive and reproduce, it is more likely to be passed on. This mechanism explains the diversity of life on Earth and is supported by evidence from genetics, fossil records, and comparative anatomy. Darwin\u2019s theory challenged the static view of life and introduced the idea that all species share common ancestors. Evolution continues to be a central principle in biology, informing our understanding of antibiotic resistance, conservation, and the development of new species.",
+      "qas": [
+        {
+          "question": "Who proposed the theory of evolution by natural selection?",
+          "answers": [
+            "Charles Darwin"
+          ]
+        },
+        {
+          "question": "What causes variations in traits for natural selection?",
+          "answers": [
+            "genetic mutations"
+          ]
+        },
+        {
+          "question": "What happens to traits that help organisms survive?",
+          "answers": [
+            "they are passed on"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The solar system consists of the sun and all the objects that orbit it, including eight planets, their moons, dwarf planets, asteroids, comets, and other celestial bodies. The sun, a massive ball of hot plasma, provides the energy that sustains life on Earth. Mercury, Venus, Earth, and Mars are known as terrestrial planets due to their rocky surfaces. Jupiter and Saturn are gas giants, while Uranus and Neptune are ice giants. The asteroid belt, located between Mars and Jupiter, contains countless rocky bodies. The solar system was formed about 4.6 billion years ago from a giant cloud of gas and dust that collapsed under gravity. Observing the solar system helps astronomers understand planetary formation, the potential for life beyond Earth, and the dynamics of celestial mechanics.",
+      "qas": [
+        {
+          "question": "What is the sun made of?",
+          "answers": [
+            "hot plasma"
+          ]
+        },
+        {
+          "question": "Which planets are considered gas giants?",
+          "answers": [
+            "Jupiter",
+            "Saturn"
+          ]
+        },
+        {
+          "question": "What lies between Mars and Jupiter?",
+          "answers": [
+            "the asteroid belt"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The Great Depression was a severe global economic downturn that began in 1929 and lasted through much of the 1930s. It was triggered by the stock market crash in the United States but quickly spread worldwide. Unemployment soared, banks failed, and millions of people lost their savings and homes. In the U.S., President Franklin D. Roosevelt introduced the New Deal, a series of programs and reforms aimed at economic recovery. These included public works projects, social security, and financial regulations. The Great Depression had lasting effects on economic policies and attitudes toward government intervention in the economy.",
+      "qas": [
+        {
+          "question": "When did the Great Depression begin?",
+          "answers": [
+            "1929"
+          ]
+        },
+        {
+          "question": "What U.S. president introduced the New Deal?",
+          "answers": [
+            "Franklin D. Roosevelt"
+          ]
+        },
+        {
+          "question": "What caused many people to lose their savings during the Great Depression?",
+          "answers": [
+            "bank failures",
+            "stock market crash"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Volcanoes are geological formations that occur when magma from beneath the Earth's crust escapes to the surface. This magma, once it erupts, is called lava. Volcanoes are usually found at tectonic plate boundaries, especially in subduction zones and along mid-ocean ridges. Eruptions can vary from quiet lava flows to explosive bursts that release ash, gases, and rock into the atmosphere. The material from eruptions can form new land, enrich soil with minerals, and even impact climate by blocking sunlight. While they pose serious risks to nearby populations, they also provide insight into Earth's internal processes. Famous volcanoes include Mount Vesuvius, Mount St. Helens, and Krakatoa.",
+      "qas": [
+        {
+          "question": "What is magma called once it reaches the surface?",
+          "answers": [
+            "lava"
+          ]
+        },
+        {
+          "question": "Where are volcanoes commonly found?",
+          "answers": [
+            "tectonic plate boundaries"
+          ]
+        },
+        {
+          "question": "What can volcanoes release into the atmosphere?",
+          "answers": [
+            "ash",
+            "gases",
+            "rock"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Renewable energy comes from sources that are naturally replenished, such as sunlight, wind, rain, tides, waves, and geothermal heat. Unlike fossil fuels, renewable energy sources emit little to no greenhouse gases, making them a key part of strategies to combat climate change. Solar panels capture sunlight and convert it into electricity, while wind turbines harness the energy of moving air. Hydropower uses flowing water to generate power, often through dams. Geothermal energy taps into heat from within the Earth, and biomass energy comes from organic materials like wood and crop waste. Although renewable energy is cleaner, challenges include storage, intermittency, and infrastructure adaptation.",
+      "qas": [
+        {
+          "question": "Name a renewable energy source that uses sunlight.",
+          "answers": [
+            "solar energy"
+          ]
+        },
+        {
+          "question": "What kind of gases do renewable sources avoid emitting?",
+          "answers": [
+            "greenhouse gases"
+          ]
+        },
+        {
+          "question": "What energy source comes from Earth's heat?",
+          "answers": [
+            "geothermal energy"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The Renaissance was a cultural movement that began in Italy during the 14th century and later spread across Europe. It marked the transition from the Middle Ages to the modern era and was characterized by a revival of interest in classical art, literature, and learning. Artists such as Leonardo da Vinci and Michelangelo created masterpieces that emphasized human anatomy, perspective, and realism. The invention of the printing press by Johannes Gutenberg around 1440 revolutionized the dissemination of knowledge, making books more accessible. The Renaissance also saw major advancements in science, with figures like Galileo Galilei and Nicolaus Copernicus challenging established views about the universe. Humanism, a philosophy that emphasized the value and agency of human beings, became a central theme. This period laid the groundwork for the scientific revolution and the Enlightenment that followed.",
+      "qas": [
+        {
+          "question": "Where did the Renaissance begin?",
+          "answers": [
+            "Italy"
+          ]
+        },
+        {
+          "question": "Who invented the printing press?",
+          "answers": [
+            "Johannes Gutenberg"
+          ]
+        },
+        {
+          "question": "What philosophy emphasized human value during the Renaissance?",
+          "answers": [
+            "Humanism"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Coral reefs are diverse underwater ecosystems held together by calcium carbonate structures secreted by corals. These reefs are primarily found in warm, shallow ocean waters and provide habitat for thousands of marine species. Coral polyps, the tiny animals that build reefs, live in symbiosis with algae called zooxanthellae, which provide the corals with nutrients via photosynthesis. Coral reefs offer numerous benefits including coastal protection, tourism, and fisheries. However, they are under threat from climate change, ocean acidification, overfishing, and pollution. Coral bleaching, a phenomenon where corals expel their symbiotic algae due to stress, often leads to coral death. Conservation efforts focus on reducing carbon emissions, protecting marine areas, and restoring damaged reefs.",
+      "qas": [
+        {
+          "question": "What structure do corals secrete to build reefs?",
+          "answers": [
+            "calcium carbonate"
+          ]
+        },
+        {
+          "question": "What causes coral bleaching?",
+          "answers": [
+            "stress",
+            "rising temperatures"
+          ]
+        },
+        {
+          "question": "What are the algae that live in coral called?",
+          "answers": [
+            "zooxanthellae"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Democracy is a system of government in which power is vested in the people, typically through elected representatives. In a democratic society, citizens have the right to vote, express their opinions, and participate in decision-making processes. The core principles of democracy include majority rule, protection of minority rights, the rule of law, and the separation of powers. Modern democracies often feature checks and balances among branches of government to prevent the abuse of power. The ancient city of Athens is credited with developing one of the earliest forms of democracy. Today, democratic systems vary widely, from presidential to parliamentary models. While democracy promotes accountability and civil liberties, it requires active participation and a well-informed electorate to function effectively.",
+      "qas": [
+        {
+          "question": "Where did early democracy develop?",
+          "answers": [
+            "Athens"
+          ]
+        },
+        {
+          "question": "What principle protects against power abuse in democracies?",
+          "answers": [
+            "checks and balances"
+          ]
+        },
+        {
+          "question": "What must citizens do for democracy to work?",
+          "answers": [
+            "participate",
+            "stay informed"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "Artificial intelligence (AI) is the field of computer science that aims to create machines capable of intelligent behavior. AI systems are designed to perform tasks that typically require human intelligence, such as recognizing speech, translating languages, playing games, and making decisions. AI can be classified into narrow AI, which is designed for specific tasks, and general AI, which would perform any intellectual task a human can do. Recent advancements in machine learning, especially deep learning, have led to major breakthroughs in image recognition, natural language processing, and autonomous vehicles. While AI presents numerous opportunities, it also raises concerns about ethics, bias, job displacement, and control. Responsible development includes fairness, transparency, and alignment with human values.",
+      "qas": [
+        {
+          "question": "What is AI designed to do?",
+          "answers": [
+            "perform tasks requiring human intelligence"
+          ]
+        },
+        {
+          "question": "What kind of AI can do any intellectual task a human can?",
+          "answers": [
+            "general AI"
+          ]
+        },
+        {
+          "question": "What are some concerns related to AI?",
+          "answers": [
+            "ethics",
+            "bias",
+            "job displacement"
+          ]
+        }
+      ]
+    },
+    {
+      "context": "The nervous system is the body\u2019s communication network, responsible for transmitting signals between different parts of the body. It is divided into the central nervous system (CNS), comprising the brain and spinal cord, and the peripheral nervous system (PNS), which includes all other neural elements. The brain processes sensory information and controls voluntary and involuntary actions. Neurons, the functional units of the nervous system, transmit electrical impulses via synapses. The spinal cord acts as a conduit for messages between the brain and body. Reflex actions occur when signals bypass the brain, enabling quick responses. Disorders of the nervous system include multiple sclerosis, Parkinson\u2019s disease, and epilepsy. Proper functioning is essential for coordination, perception, thought, and movement.",
+      "qas": [
+        {
+          "question": "What are the two main parts of the nervous system?",
+          "answers": [
+            "central nervous system",
+            "peripheral nervous system"
+          ]
+        },
+        {
+          "question": "What cell transmits signals in the nervous system?",
+          "answers": [
+            "neuron"
+          ]
+        },
+        {
+          "question": "What part of the nervous system processes sensory input?",
+          "answers": [
+            "brain"
+          ]
+        }
+      ]
+    }
+  ]

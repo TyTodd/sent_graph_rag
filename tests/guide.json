@@ -1,0 +1,14 @@
+[{
+    "context": "string",
+    "qas": [{"question": "string", "answers":["string"]}]
+
+}]
+
+[
+    {
+    "graph": "Graph",
+    "qas": [
+        {"question": "string", "answers":["string"], "question_embedding": "np.ndarray", "question_entities": ["string"], "answer_entities": ["string"]}
+    ]
+    }
+]
