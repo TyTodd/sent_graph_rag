@@ -109,6 +109,82 @@ class SentenceGraphDataset:
                 graph_type = metadata["graph_type"]
             sentence_graph_dataset = SentenceGraphDataset(path_name = in_name, verbose = verbose, graph_type = graph_type, directory_mode = False, metadata = metadata)
         return sentence_graph_dataset
+
+    @staticmethod
+    def from_dataset(datatset_reader: DatasetReader,  out_dir: Optional[str] = None, out_path: Optional[str] = None, graph_type: Literal["igraph", "graph-tool"] = "igraph", language_model: Optional[LanguageModel] = None, chunk_size: int = 1000, metadata: dict = {}, verbose:bool = False, max_file_size: Optional[int] = None, overwrite: bool = False):
+        """
+        Convert a dataset to a sentence graph dataset.
+        datatset_reader: DatasetReader class for the dataset to convert
+        out_dir: str path to save the sentence graph dataset (can only be set if out_path is None and max_file_size is set)
+        out_path: str path to save the sentence graph dataset (can only be set if out_dir is None and max_file_size is None)
+        graph_type: Literal["igraph", "graph-tool"] graph library to use
+        language_model: LanguageModel language model for inference 
+        chunk_size: int number of rows to process at a time
+        metadata: dict metadata to save with the dataset
+        verbose: bool 
+        max_file_size: int maximum size of the file to save in GB
+        overwrite: bool overwrite the output directory if it exists
+        """
+        if (out_dir is None) == (out_path is None):
+            raise ValueError("Specify exactly one of `out_dir` or `out_path`.")
+
+        if out_dir and max_file_size is None:
+            raise ValueError("`max_file_size` must be set when using `out_dir`.")
+        
+        if out_path and max_file_size is None:
+            warnings.warn(
+                "`max_file_size` is set but you are using `out_path` so file sizes will not be limited. Use `out_dir` instead to split files.",
+                UserWarning
+            )
+        
+        if out_dir and os.path.exists(out_dir) and os.listdir(out_dir) and not overwrite:
+            response = input(f"Output directory {out_dir} is not empty. Would you like to empty it? [y/N]: ")
+            if response.lower() != 'y' or response.lower() != '':
+                raise ValueError("Aborting: Output directory is not empty.")
+            shutil.rmtree(out_dir)
+        
+        directory_mode = out_dir is not None
+        if language_model is None:
+            language_model = LanguageModel()
+        sentence_graph_dataset = SentenceGraphDataset(path_name = out_dir if directory_mode else out_path, language_model = language_model, verbose = verbose, graph_type = graph_type, directory_mode = directory_mode)
+        sentence_graph_dataset.data_length = len(datatset_reader)
+        
+        metadata["dataset_type"] = "sentence_graph"
+        metadata["graph_type"] = graph_type
+        metadata["has_embeddings"] = False
+        if out_path:
+            temp_path = os.path.splitext(out_path)[0] + "_temp" + os.path.splitext(out_path)[1]
+            with open(temp_path, "wb") as out:
+                writer(out, temp_dataset_schema, sentence_graph_dataset.temp_dataset(datatset_reader, chunk_size), metadata=metadata)
+            metadata["has_embeddings"] = True  
+            metadata["embedding_dim"] = language_model.embedding_model.get_dim()
+            with open(out_path, "wb") as out:
+                writer(out, graph_dataset_schema, sentence_graph_dataset.embeded_dataset(temp_path, chunk_size), metadata=metadata)
+            
+            os.remove(temp_path)
+        else:
+            temp_dataset_iter = sentence_graph_dataset.temp_dataset(datatset_reader, chunk_size)
+            for i, dataset_generator in enumerate(sentence_graph_dataset.dataset_split(temp_dataset_iter, max_file_size, chunk_size)):
+                temp_dir = out_dir + "/temp"
+                os.makedirs(temp_dir)
+                with open(temp_dir + f"/temp_{i}.avro", "wb") as out:
+                    writer(out, temp_dataset_schema, dataset_generator, metadata=metadata)
+            metadata["has_embeddings"] = True 
+            metadata["embedding_dim"] = language_model.embedding_model.get_dim() 
+            
+            embeded_dataset_iter = sentence_graph_dataset.embeded_dataset(temp_dir, chunk_size)
+            file_name = datatset_reader.get_name()
+            for i, dataset_generator in enumerate(sentence_graph_dataset.dataset_split(embeded_dataset_iter, max_file_size, chunk_size)):
+                with open(out_dir + f"/{file_name}_{i}.avro", "wb") as out:
+                    writer(out, graph_dataset_schema, dataset_generator, metadata=metadata)
+            
+            with open(os.path.join(out_dir, "metadata.json"), "w") as f:
+                json.dump(metadata, f, indent=4)
+            shutil.rmtree(temp_dir)
+        
+        sentence_graph_dataset.metadata = metadata
+        return sentence_graph_dataset
+    
         
             
     def __iter__(self):

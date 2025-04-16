@@ -46,9 +46,9 @@ def test_mit_graph_build(load_model):
         if prop_noun is None: # if no proper noun in cluster then it was never added to the graph
             continue
         prop_noun_text = prop_noun.text
-        prop_noun_node = graph.get_vertex(prop_noun_text)
-            
-        
+        nodes = graph.set_vertex_filter("aliases", filter_fn=lambda x: prop_noun_text in x)
+        assert len(nodes) > 0, f"Entity '{prop_noun_text}' not found in graph"
+        assert len(nodes) < 2, f"Entity '{prop_noun_text}' found in multiple nodes in graph"
         
         
         
