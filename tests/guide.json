@@ -1,8 +1,8 @@
-[{
+[[{
     "context": "string",
     "qas": [{"question": "string", "answers":["string"]}]
 
-}]
+}],
 
 [
     {
@@ -11,4 +11,4 @@
         {"question": "string", "answers":["string"], "question_embedding": "np.ndarray", "question_entities": ["string"], "answer_entities": ["string"]}
     ]
     }
-]
+]]
