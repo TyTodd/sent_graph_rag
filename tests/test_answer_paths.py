@@ -1,7 +1,27 @@
 from sent_graph_rag.Datasets.answer_path_dataset import extract_answer_paths_from_entities
 
+vertex_embeddings = {
+    "Sofie": [0.21380899, 0.92684816, 0.30860686],
+    "MIT": [0.13363062, 0.98783793, -0.0794926],
+    "NYC": [0.16035675, 0.98635373, 0.03731008],
+    "1861": [0.02672612, 0.88133184, -0.47174135],
+    "Cambridge": [-0.05345225, 0.70833497, -0.70384972]
+}
+
+edge_embeddings = {
+    "1": [0.16035675, 0.98635373, 0.03731008],
+    "2": [0.21380899, 0.92684816, 0.30860686],
+    "3": [-0.1069045, 0.5487777, -0.82910462],
+    "4": [-0.35540099, 0.42761799, 0.83116364],
+    "5": [0.05345225, 0.92214396, -0.38313623],
+    "6": [0.05345225, 0.92214396, -0.38313623],
+    "7": [0.05345225, 0.92214396, -0.38313623],
+    "8": [0.1069045, 0.97639568, -0.18767764],
+    "9": [-0.05345225, 0.70833497, -0.70384972]
+}
+
 @pytest.mark.parametrize("question_entities, answer_entities, answers, expected_num_paths", [
-    pytest.param(["Sofie"], [],["Cambridge"], 2, False, id="source_entity_match"), # 1 of question_entities is in least similar vertex aliases, 4
+    pytest.param(["New York"], [],["Cambridge"], 2, False, id="source_entity_match"), # 1 of question_entities is in least similar vertex aliases, 4
     #question entity empty, 3
     pytest.param([], [],["Cambridge"], 1, False, id="target_exact_match"), # answer should be an alias of target
     pytest.param([], ["Cambridge"],["is in Cambridge"], 1, False, id="target_edge_entity_match"), # answer should be in final edge sentence -- connected to target u should go through, answer_entity that matches the target's aliases 
@@ -51,7 +71,7 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
         "ner_label": "", #doesnt matter
         "aliases": ["Sofie", "Sofie's"] #matters
     })
-    v2 = graph.add_vertex({ #[ 0.13363062, 0.98783793 -0.0794926 ]
+    v2 = graph.add_vertex({ #[0.13363062, 0.98783793 -0.0794926]
         "id": "2",
         "label": "",
         "terminal": False,
@@ -154,50 +174,92 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
     edge9 = graph.add_edge(source, v2, edge_prop) #weight: 6, embedding: [-0.05345225, 0.70833497, -0.70384972]
 
     # Edge Embeddings
-    graph.add_edge_embeddings(torch.tensor([[0.16035675, 0.98635373, 0.03731008],
-                                            [0.21380899, 0.92684816, 0.30860686],
-                                            [-0.1069045, 0.5487777, -0.82910462],
-                                            [-0.35540099, 0.42761799, 0.83116364],
-                                            [0.05345225, 0.92214396, -0.38313623],
-                                            [0.05345225, 0.92214396, -0.38313623],
-                                            [0.05345225, 0.92214396, -0.38313623],
-                                            [0.1069045, 0.97639568, -0.18767764],
-                                            [-0.05345225, 0.70833497, -0.70384972]]))
+    graph.add_edge_embeddings(torch.tensor([edge_embeddings["1"],
+                                            edge_embeddings["2"],
+                                            edge_embeddings["3"],
+                                            edge_embeddings["4"],
+                                            edge_embeddings["5"],
+                                            edge_embeddings["6"],
+                                            edge_embeddings["7"],
+                                            edge_embeddings["8"],
+                                            edge_embeddings["9"]
+                                            ]))
 
     # Vertex Embeddings
-    graph.add_vertex_embeddings(torch.tensor([[0.21380899, 0.92684816, 0.30860686],
-                                            [ 0.13363062, 0.98783793 -0.0794926 ],
-                                            [0.16035675, 0.98635373, 0.03731008],
-                                            [ 0.02672612, 0.88133184, -0.47174135],
-                                            [-0.05345225, 0.70833497, -0.70384972]]))
+    graph.add_vertex_embeddings(torch.tensor([vertex_embeddings["Sofie"],
+                                            vertex_embeddings["MIT"],
+                                            vertex_embeddings["NYC"]
+                                            vertex_embeddings["1861"]
+                                            vertex_embeddings["Cambridge"]
+                                            ]))
 
     # Question Embedding
     question_embedding = [1.0, 2.0, 3.0]
 
-    correct_path_nodes =  [torch.tensor([[0.21380899, 0.92684816, 0.30860686]]),
-                            torch.tensor([[ 0.13363062, 0.98783793 -0.0794926 ]]),
-                            torch.tensor([[ 0.02672612, 0.88133184, -0.47174135]]),
-                            torch.tensor([[-0.05345225, 0.70833497, -0.70384972]])
-                            ]
+    # Correct Path
+    correct_path1 = [
+                        [torch.tensor([vertex_embeddings["Sofie"]])],
+                        [
+                            torch.tensor([edge_embeddings["1"]]),
+                            torch.tensor([edge_embeddings["2"]]),
+                            torch.tensor([edge_embeddings["5"]]),
+                            torch.tensor([edge_embeddings["7"]]),
+                            torch.tensor([edge_embeddings["9"]])
+                        ],
+                        [torch.tensor([vertex_embeddings["MIT"]])],
+                        [
+                            torch.tensor([edge_embeddings["4"]]),
+                            torch.tensor([edge_embeddings["3"]]),
+                            torch.tensor([edge_embeddings["1"]]),
+                            torch.tensor([edge_embeddings["9"]])
+                        ],
+                        [torch.tensor([vertex_embeddings["1861"]])],
+                        [
+                            torch.tensor([edge_embeddings["8"]]),
+                            torch.tensor([edge_embeddings["4"]]),
+                            torch.tensor([edge_embeddings["5"]]),
+                            torch.tensor([edge_embeddings["6"]])
+                        ],
+                        [torch.tensor([vertex_embeddings["Cambridge"]])]
+                    ]
+    if targetIsEdge:
+        correct_path1.pop(-1)
 
-    correct_path_edges = [torch.tensor([[0.16035675, 0.98635373, 0.03731008]]),
-                            torch.tensor([[-0.35540099, 0.42761799, 0.83116364]]),
-                            torch.tensor([[0.1069045, 0.97639568, -0.18767764]])
-                            ]
+    correct_path2 = [
+                        [torch.tensor([vertex_embeddings["NYC"]])],
+                        [
+                            torch.tensor([edge_embeddings["6"]]),
+                            torch.tensor([edge_embeddings["2"]]),
+                            torch.tensor([edge_embeddings["7"]])
+                        ],
+                        [
+                            torch.tensor([vertex_embeddings["1861"]]),
+                            torch.tensor([vertex_embeddings["Sofie"]]),
+                            torch.tensor([vertex_embeddings["NYC"]])
+                        ],
+                        [
+                            torch.tensor([edge_embeddings["8"]]),
+                            torch.tensor([edge_embeddings["4"]]),
+                            torch.tensor([edge_embeddings["5"]]),
+                            torch.tensor([edge_embeddings["6"]])
+                        ],
+                        [torch.tensor([vertex_embeddings["Cambridge"]])]
+                    ]
+    
+    correct_paths = [correct_path1, correct_path2]
 
 
     data = extract_answer_paths_from_entities(graph, [question], [question_entities], [question_embedding], [answer_entiies], [answers])
     result_question_embedding, paths = data[0]
     assert result_question_embedding == question_embedding, "question embedding doesn't match"
     assert len(paths) ==  expected_num_paths, "unexpected number of paths"
-    assert paths[0]
-
-    # def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[str], all_query_entities: List[List[str]], 
-    #                                     all_query_embeddings: List[np.ndarray], all_answer_entities: List[List[str]], 
-    #                                     all_answers: List[List[str]]) -> List[Tuple[np.ndarray, List[List[List[np.ndarray]]]]]:
-
-    #                                     [result_question_embedding, paths]
-    #                                     paths: [[sofie], [sofie, mit]]
-
-
-    pass
+    #check if path is correct
+    for i, path in enumerate(paths):
+        correct_path = correct_paths[i]
+        assert len(path) == len(correct_path), "lens of path {i} don't match"
+        for j, options in enumerate(path):
+            correct_options = correct_path[j]
+            assert len(options) == len(correct_options), "path {i}, lens of option {j} don't match"
+            assert torch.isclose(options[0], correct_options[0]), "first option doesn't match --> for path {i}, option {j} isn't close enough"
+            for option in options:
+                assert any(torch.isclose(t, option) for t in correct_options), "for path {i}, option {j}, isn't close enough"
