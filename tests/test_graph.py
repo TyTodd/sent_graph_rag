@@ -1,7 +1,6 @@
 import pytest
 import torch
-from sent_graph_rag.Datasets.igraph_graph import IGraphSentenceGraph
-from sent_graph_rag.Datasets.graph import VertexProperties, EdgeProperties
+from sent_graph_rag import IGraphSentenceGraph, VertexProperties, EdgeProperties
 from typing import List
 
 @pytest.fixture

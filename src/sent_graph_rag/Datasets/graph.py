@@ -92,7 +92,7 @@ class SentenceGraph(ABC, Generic[V, E]):
         pass
     
     @abstractmethod
-    def set_vertex_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[V], bool] = None) -> None:
+    def set_vertex_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[Any], bool] = None) -> None:
         """Sets the filter for the vertices. Filters are only guaranteed to apply to the functions iter_vertices(), 
         num_vertices(), get_vertex_embeddings(), iter_edges(), num_edges(), and get_edge_embeddings(). 
         However, GraphToolSentenceGraph will also apply the filters to all functions since it uses a GraphView .
@@ -103,7 +103,7 @@ class SentenceGraph(ABC, Generic[V, E]):
             raise ValueError("Either eq_value or filter_fn must be provided")
     
     @abstractmethod
-    def set_edge_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[E], bool] = None, filter_unconnected_vertices: bool = False) -> None:
+    def set_edge_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[Any], bool] = None, filter_unconnected_vertices: bool = False) -> None:
         """Sets the filter for the edges. Filters are only guaranteed to apply to the functions iter_edges(), 
         num_edges(), get_edge_embeddings(), iter_vertices(), num_vertices(), and get_vertex_embeddings(). 
         However, GraphToolSentenceGraph will also apply the filters to all functions since it uses a GraphView .
@@ -272,7 +272,7 @@ class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
     def num_edges(self) -> int:
         return self.graph.num_edges()
     
-    def set_vertex_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[["gt.Vertex"], bool] = None) -> None:
+    def set_vertex_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[Any], bool] = None) -> None:
         super().set_vertex_filter(property, eq_value, filter_fn)
         if eq_value is not None:
             vprop = self.graph.new_vertex_property("bool")
@@ -283,7 +283,7 @@ class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
             filter_prop = prop.transform(filter_fn, value_type="bool")
             self.graph.set_vertex_filter(filter_prop)
     
-    def set_edge_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[["gt.Edge"], bool] = None, filter_unconnected_vertices: bool = False) -> None:
+    def set_edge_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[Any], bool] = None, filter_unconnected_vertices: bool = False) -> None:
         super().set_edge_filter(property, eq_value, filter_fn, filter_unconnected_vertices)
         if eq_value is not None:
             vprop = self.graph.new_edge_property("bool")
@@ -340,8 +340,11 @@ class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
     def get_weight(self, edge: "gt.Edge") -> float:
         return self.edge_weights[edge]
         
-IGraphVertex = Union[int, ig.Vertex]
-IGraphEdge = Union[int, ig.Edge]
+# IGraphVertex = Union[int, ig.Vertex]
+# IGraphEdge = Union[int, ig.Edge]
+
+IGraphVertex = ig.Vertex
+IGraphEdge = ig.Edge
 
 class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
     def __init__(self, corpus: str):
@@ -365,7 +368,8 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
         # return v
     
     def add_edge(self, source: IGraphVertex, target: IGraphVertex, properties: EdgeProperties) -> IGraphEdge:
-        e = self.graph.add_edge(source, target)
+        edge = self.graph.add_edge(source, target)
+        e = edge.index
         # self.graph.add_edges([(source, target)])
         # e = len(self.graph.es) - 1
         self.graph.es[e]["sentence"] = properties["sentence"]
@@ -375,16 +379,20 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
         return e
     
     def vertex_is_terminal(self, vertex: IGraphVertex) -> bool:
-        return self.graph.vs[vertex]["terminal"]
+        # return self.graph.vs[vertex]["terminal"]
+        return vertex["terminal"]
     
     def edge_is_terminal(self, edge: IGraphEdge) -> bool:
-        return self.graph.es[edge]["terminal"]
+        # return self.graph.es[edge]["terminal"]
+        return edge["terminal"]
     
-    def get_vertex_property(self, vertex: IGraphVertex, property: str) -> Any:
-        return self.graph.vs[vertex][property]
+    def get_vertex_property(self, vertex: IGraphVertex, property_name: str) -> Any:
+        # return self.graph.vs[vertex][property_name]
+        vertex[property_name]
     
-    def get_edge_property(self, edge: IGraphEdge, property: str) -> Any:
-        return self.graph.es[edge][property]
+    def get_edge_property(self, edge: IGraphEdge, property_name: str) -> Any:
+        # return self.graph.es[edge][property_name]
+        edge[property_name]
     
     def add_vertex_embeddings(self, embeddings: torch.Tensor) -> None:
         self.graph.vs["embedding"] = embeddings
@@ -404,17 +412,21 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
     def num_edges(self) -> int:
         return self.filtered_edges.ecount()
     
-    def set_vertex_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[IGraphVertex], bool] = None) -> None:
-        super().set_vertex_filter(property, eq_value, filter_fn)
+    def set_vertex_filter(self, property_name: str, eq_value: Any = None, filter_fn: Callable[[Any], bool] = None) -> None:
+        super().set_vertex_filter(property_name, eq_value, filter_fn)
+
+        transformed_fn = lambda v: filter_fn(v[property_name])
         
         if eq_value is not None:
-            self.filtered_vertices = self.filtered_vertices.select(**{property: eq_value})
+            self.filtered_vertices = self.filtered_vertices.select(**{property_name: eq_value})
         else:
-            self.filtered_vertices = self.filtered_vertices.select(filter_fn)
+            self.filtered_vertices = self.filtered_vertices.select(transformed_fn)
             
-    def set_edge_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[IGraphEdge], bool] = None, filter_unconnected_vertices: bool = False) -> None:
+    def set_edge_filter(self, property: str, eq_value: Any = None, filter_fn: Callable[[Any], bool] = None, filter_unconnected_vertices: bool = False) -> None:
         super().set_edge_filter(property, eq_value, filter_fn, filter_unconnected_vertices)
         
+        transformed_fn = lambda e: filter_fn(e[property_name])
+
         if eq_value is not None:
             self.filtered_edges = self.filtered_edges.select(**{property: eq_value})
         else:
@@ -444,7 +456,7 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
     def shortest_paths(self, start_node: IGraphVertex, end_nodes: List[IGraphVertex]) -> tuple[List[IGraphVertex], List[IGraphEdge]]:
         if self.edge_weights is None:
             raise ValueError("Edge weights are not set")
-        edge_lists = self.graph.get_shortest_path(start_node, to=end_nodes, weights=self.edge_weights, output="epath")
+        edge_lists = self.graph.get_shortest_path(start_node.index, to=[end_node.index for end_node in end_nodes], weights=self.edge_weights, output="epath")
         vertex_lists = []
         for edge_list in edge_lists:
             last_vertex = start_node
@@ -457,7 +469,8 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
         
         return list(zip(vertex_lists, edge_lists))
     def edge_endpoints(self, edge: IGraphEdge) -> tuple[IGraphVertex, IGraphVertex]:
-        return self.graph.es[edge].source, self.graph.es[edge].target
+        # return self.graph.es[edge].source, self.graph.es[edge].target
+        return edge.source, edge.target
 
     def get_neighbors(self, vertex: IGraphVertex) -> Iterator[IGraphVertex]:
         return vertex.neighbors(mode="all")
