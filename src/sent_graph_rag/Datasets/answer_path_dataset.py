@@ -448,7 +448,7 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
           # TODO: change in filter method here for graph-tool
           graph.set_edge_filter("sentence", eq_value = edge_group_sentence) 
           # print("set sentence match filter:", time.time() - start)
-          added_nodes = set([source_node, target_node])
+          added_nodes = set([target_node])
           incorrect_nodes = []
           # start = time.time()
           for e in graph.edges():
