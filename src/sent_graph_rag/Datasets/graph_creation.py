@@ -16,22 +16,33 @@ def create_graph_from_doc(GraphClass, doc: Doc, verbose: bool = False):
             entity_cluster_map[loc] = cluster
     # Create a dictionary mapping unique entities names to all of their mentions across the doc
     visited_references = set()
-    unique_entities = {}
-    eid_name_map = {} #mapping entity ids to the name of the entiy
-    eid_label_map = {} #mapping entity ids to the label of the entity
+    alias_eid_map = {} #maps each alias (reference that is a PROPN) to the entity id that it is an alias of
+    unique_entities = {} # maps each unique entity id to a list of its references across the text
+    eid_name_map = {} # mapping entity ids to the name of the entiy
+    eid_label_map = {} # mapping entity ids to the label of the entity
     for ent in doc.ents:
             # unique id will be {entityText}_{label}
             ent_loc = (ent.start_char, ent.end_char)
             if ent_loc not in visited_references:
-                entity_id = f"{ent.text}_{ent.label_}"
-                eid_name_map[entity_id] = ent.text
-                eid_label_map[entity_id] = ent.label_
+                if ent.text in alias_eid_map and eid_label_map[alias_eid_map[ent.text]] == ent.label_:
+                    entity_id = alias_eid_map[ent.text]
+                else:
+                    entity_id = f"{ent.text}_{ent.label_}"
+                    eid_name_map[entity_id] = ent.text
+                    eid_label_map[entity_id] = ent.label_
 
                 unique_entities.setdefault(entity_id, [])
 
                 if ent_loc in entity_cluster_map: # if in a cluster map to all references of entity
                     visited_references.update(set(entity_cluster_map[ent_loc]))
                     unique_entities[entity_id].extend(entity_cluster_map[ent_loc])
+                    for loc in entity_cluster_map[ent_loc]:
+                        ref = doc.char_span(loc[0], loc[1], alignment_mode="contract")
+                        pos = [tok.pos_ for tok in ref]
+                        if "PROPN" in pos:
+                            alias_eid_map[ref.text] = entity_id
+              
+              
                 else: # if not in cluster map to just the single mention of entity
                     unique_entities[entity_id].append((ent.start_char, ent.end_char))
                     visited_references.add(ent_loc)

@@ -1,6 +1,7 @@
 import pytest
 from sent_graph_rag import LanguageModel, SentenceGraph, IGraphSentenceGraph
-from sent_graph_rag.Datasets import DatasetReader
+from sent_graph_rag.Datasets import DatasetReader, SentenceGraphDataset
+import json
 
 @pytest.fixture(scope="session")
 def load_model():
@@ -61,7 +62,10 @@ def test_mit_graph_build(load_model):
         edge_sentences = [graph.get_edge_property(edge, "sentence") for edge in edges]
         for ref in cluster:
             ref_sentence = ref.sent.text
-        
+            assert ref_sentence in edge_sentences, f"""Sentence for entity '{prop_noun_text}' not connected to node: '{graph.get_vertex_property(prop_noun_node, "id")}'
+            sentence: {ref_sentence}
+            edges: {edge_sentences}
+            """
         
         
         
@@ -77,7 +81,7 @@ class TestReader(DatasetReader):
             self.test_data = json.load(f)
         self.data_length = len(self.test_data)
         
-    def read(self) -> Iterator[Row]:
+    def read(self):
         for row in self.test_data:
             yield {"context": row["context"], "qas": row["qas"]}
     
