@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict, Union, Optional
 import numpy as np
 from numpy.linalg import norm
-from graph_tool.all import shortest_path
 import time
 from .graph import SentenceGraph
 from .sentence_graph_dataset import SentenceGraphDataset

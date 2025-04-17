@@ -71,7 +71,7 @@ def test_mit_graph_build(load_model):
         
         
         
-class TestReader(DatasetReader):
+class DemoReader(DatasetReader):
     """
     Reader for the test dataset.
     """

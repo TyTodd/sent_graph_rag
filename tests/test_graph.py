@@ -16,10 +16,12 @@ def test_add_vertex(graph):
         "aliases": ["test", "entity"]
     }
     vertex = graph.add_vertex(vertex_props)
-    assert graph.get_vertex_property(vertex, "label") == "test entity"
-    assert graph.vertex_is_terminal(vertex)
-    assert graph.get_vertex_property(vertex, "ner_label") == "PERSON"
-    assert not graph.is_edge(vertex)
+    label = graph.get_vertex_property(vertex, "label")
+    assert label == "test entity", f" expected: test entity, got: {label}"
+    assert graph.vertex_is_terminal(vertex), f"expected: True, got False"
+    ner_label = graph.get_vertex_property(vertex, "ner_label")
+    assert ner_label == "PERSON", f"expected: PERSON, got {ner_label}"
+    assert not graph.is_edge(vertex), f"expected: False, got: True"
 
 def test_add_edge(graph):
     v1 = graph.add_vertex({
@@ -62,11 +64,30 @@ def test_vertex_embeddings(graph):
         "ner_label": "ORG",
         "aliases": []
     })
-    embeddings = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+    v3 = graph.add_vertex({
+        "id": "2",
+        "label": "Entity2",
+        "terminal": True,
+        "ner_label": "ORG",
+        "aliases": []
+    })
+    e1 = torch.tensor([1.0, 2.0])
+    e2 =  torch.tensor([.12344, .32424])
+    e3 =  torch.tensor([100.1312, 2123.3121])
+
+    embeddings = torch.stack([e1, e2, e3])
     graph.add_vertex_embeddings(embeddings)
     emb, vertices = graph.get_vertex_embeddings()
-    assert torch.equal(emb, embeddings)
-    assert list(vertices) == [v1, v2]
+
+    assert torch.all(torch.isclose(emb, embeddings)).item(), "add_embedings doesn't match get_embeddings"
+    assert list(vertices) == [v1, v2, v3]
+
+    emb = lambda x: graph.get_vertex_property(x,"embedding")
+    assert torch.all(torch.isclose(emb(v1), e1)), "vertex 1 embedding doesn't match"
+    assert torch.all(torch.isclose(emb(v2), e2)), "vertex 2 embedding doesn't match"
+    assert torch.all(torch.isclose(emb(v3), e3)), "vertex 3 embedding doesn't match"
+
+    assert not torch.all(torch.isclose(emb(v1), e3)), "vertex 1 embedding shouldn't match embedding 3"
 
 def test_edge_embeddings(graph):
     v1 = graph.add_vertex({
@@ -83,17 +104,62 @@ def test_edge_embeddings(graph):
         "ner_label": "ORG",
         "aliases": []
     })
-    edge = graph.add_edge(v1, v2, {
+    v3 = graph.add_vertex({
+        "id": "2",
+        "label": "Entity2",
+        "terminal": True,
+        "ner_label": "ORG",
+        "aliases": []
+    })
+    v4 = graph.add_vertex({
+        "id": "2",
+        "label": "Entity2",
+        "terminal": True,
+        "ner_label": "ORG",
+        "aliases": []
+    })
+
+    edge1 = graph.add_edge(v1, v2, {
         "sentence": "Entity1 works at Entity2",
         "entity1": "Entity1",
         "entity2": "Entity2",
         "terminal": False
     })
-    embeddings = torch.tensor([[1.0, 2.0]])
+    edge2 = graph.add_edge(v3, v4, {
+        "sentence": "Entity1 works at Entity2",
+        "entity1": "Entity1",
+        "entity2": "Entity2",
+        "terminal": False
+    })
+    edge3 = graph.add_edge(v1, v2, {
+        "sentence": "Entity1 works at Entity2",
+        "entity1": "Entity1",
+        "entity2": "Entity2",
+        "terminal": False
+    })
+    edge4 = graph.add_edge(v1, v4, {
+        "sentence": "Entity1 works at Entity2",
+        "entity1": "Entity1",
+        "entity2": "Entity2",
+        "terminal": False
+    })
+
+    e1 =  torch.tensor([1.0, 2.0])
+    e2 =  torch.tensor([3.4, 1.23434])
+    e3 =  torch.tensor([304.9837, 55.23455])
+    e4 =  torch.tensor([.3434, .2343])
+    embeddings = torch.stack([e1, e2, e3, e4])
     graph.add_edge_embeddings(embeddings)
     emb, edges = graph.get_edge_embeddings()
-    assert torch.equal(emb, embeddings)
-    assert list(edges) == [edge]
+    assert torch.all(torch.isclose(emb, embeddings)).item(), "all embeddings dont match"
+    assert list(edges) == [edge1, edge2, edge3, edge4], "edge iterator is not correct"
+
+    emb = lambda x: graph.get_edge_property(x, "embedding")
+    assert torch.all(torch.isclose(emb(edge1), e1)).item(), "edge 1 embedding doesn't match"
+    assert torch.all(torch.isclose(emb(edge2), e2)).item(), "edge 2 embedding doesn't match"
+    assert torch.all(torch.isclose(emb(edge3), e3)).item(), "edge 3 embedding doesn't match"
+    assert torch.all(torch.isclose(emb(edge4), e4)).item(), "edge 4 embedding doesn't match"
+    assert not torch.all(torch.isclose(emb(edge1), e4)).item(), "edge 1 should not match embedding 4"
 
 def test_vertex_filter(graph):
     v1 = graph.add_vertex({
@@ -101,7 +167,7 @@ def test_vertex_filter(graph):
         "label": "Person1",
         "terminal": True,
         "ner_label": "PERSON",
-        "aliases": ["A", "B"]
+        "aliases": ["A", "B", "X"]
     })
     v2 = graph.add_vertex({
         "id": "2",
@@ -113,9 +179,9 @@ def test_vertex_filter(graph):
     v3 = graph.add_vertex({
         "id": "3",
         "label": "Company2",
-        "terminal": True,
+        "terminal": False,
         "ner_label": "ORG",
-        "aliases": ["A", "E"]
+        "aliases": ["A", "E", "X"]
     })
     graph.set_vertex_filter("ner_label", eq_value="PERSON")
     assert graph.num_vertices() == 1
@@ -123,6 +189,7 @@ def test_vertex_filter(graph):
     assert len(vertices) == 1
     assert vertices[0] == v1
     graph.clear_filters()
+
     graph.set_vertex_filter("aliases", filter_fn=lambda a: "A" in a)
     assert graph.num_vertices() == 2
     vertices = list(graph.iter_vertices())
@@ -130,6 +197,18 @@ def test_vertex_filter(graph):
     assert v1 in vertices
     assert v3 in vertices
     graph.clear_filters()
+
+    graph.set_vertex_filter("terminal", eq_value=True)
+    graph.set_vertex_filter("aliases", filter_fn = lambda x: "X" in x)
+    assert graph.num_vertices() == 1
+    vertices = list(graph.iter_vertices())
+    assert v1 in vertices
+    graph.clear_filters()
+
+
+
+
+
 
 def test_edge_filter(graph):
     v1 = graph.add_vertex({
@@ -155,13 +234,13 @@ def test_edge_filter(graph):
     })
     e1 = graph.add_edge(v1, v2, {
         "sentence": "Person1 works at Nonprofit1",
-        "entity1": "Person1",
+        "entity1": "Company1",
         "entity2": "Nonprofit1",
         "terminal": True
     })
     e2 = graph.add_edge(v2, v1, {
         "sentence": "Company1 employs Person1",
-        "entity1": "Company1",
+        "entity1": "Person1",
         "entity2": "Person1",
         "terminal": False
     })
@@ -177,13 +256,26 @@ def test_edge_filter(graph):
     assert len(edges) == 1
     assert edges[0] == e1
     graph.clear_filters()
+
     graph.set_edge_filter("sentence", filter_fn=lambda s: "Comp" in s)
     assert graph.num_edges() == 2
     edges = list(graph.iter_edges())
     assert len(edges) == 2
-    assert e1 in edges
+    assert e2 in edges
     assert e3 in edges
     graph.clear_filters()
+
+    graph.set_edge_filter("terminal", eq_value=False)
+    graph.set_edge_filter("entity1", eq_value="Company1")
+    assert graph.num_edges() == 1
+    edges = list(graph.iter_edges())
+    assert e3 in edges
+    graph.clear_filters()
+
+
+
+
+
 
 def test_shortest_paths(graph):
     v1 = graph.add_vertex({
@@ -238,6 +330,7 @@ def test_shortest_paths(graph):
     paths = graph.shortest_paths(v1, [v3, v2])
     vertices_1, edges_1 = paths[0]
     vertices_2, edges_2 = paths[1]
+    print("vertices_1",vertices_1)
     assert vertices_1 == [v1, v2 ,v3]
     assert edges_1 == [e1, e2]
     assert vertices_2 == [v1, v2]
@@ -320,32 +413,60 @@ def test_get_neighbors(graph):
     assert set(neighbors) == {v2, v3}
 
 def test_serialization(graph):
-    v1 = graph.add_vertex({
+    prop1 = {
         "id": "1",
         "label": "node1",
         "terminal": True,
         "ner_label": "PERSON",
         "aliases": ["node1"]
-    })
-    v2 = graph.add_vertex({
+    }
+    v1 = graph.add_vertex(prop1)
+    prop2 = {
         "id": "2",
         "label": "node2",
         "terminal": True,
-        "ner_label": "PERSON",
-        "aliases": ["node2"]
+        "ner_label": "NONPROFIT",
+        "aliases": ["sdssd", "adfafd", "wqdew"]
+    }
+    v2 = graph.add_vertex(prop2)
+    v3 = graph.add_vertex({
+        "id": "3",
+        "label": "node3",
+        "terminal": True,
+        "ner_label": "COMPANY",
+        "aliases": ["node2", "sdsd"]
     })
-    graph.add_edge(v1, v2, {
+    prope = {
         "sentence": "node1 is connected to node2",
         "entity1": "node1",
         "entity2": "node2",
         "terminal": False
-    })
+    }
+    graph.add_edge(v1, v2, prope)
     
     # Test serialization/deserialization
     data = graph.to_bytes()
     new_graph = IGraphSentenceGraph.from_bytes(data)
     assert new_graph.num_vertices() == graph.num_vertices()
     assert new_graph.num_edges() == graph.num_edges()
+
+    new_edges = new_graph.iter_edges()
+    print("new_edges",new_edges)
+    # print(next(new_edges))
+    edpts = new_graph.edge_endpoints(next(new_edges))
+    print("verticies")
+    for v in new_graph.iter_vertices():
+        print(v)
+    ids = [new_graph.get_vertex_property(n, "id") for n in edpts] 
+    assert ids == ["1", "2"]
+    for vert1, vert2 in zip(graph.iter_vertices(), new_graph.iter_vertices()):
+        for prop in prop1:
+            assert graph.get_vertex_property(vert1, prop) == new_graph.get_vertex_property(vert2, prop)
+
+    for edge1, edge2 in zip(graph.iter_edges(), new_graph.iter_edges()):
+        for prop in prope:
+            assert graph.get_edge_property(edge1, prop) == new_graph.get_edge_property(edge2, prop)
+    
 
 def test_path_length(graph):
     v1 = graph.add_vertex({
