@@ -330,7 +330,6 @@ def test_shortest_paths(graph):
     paths = graph.shortest_paths(v1, [v3, v2])
     vertices_1, edges_1 = paths[0]
     vertices_2, edges_2 = paths[1]
-    print("vertices_1",vertices_1)
     assert vertices_1 == [v1, v2 ,v3]
     assert edges_1 == [e1, e2]
     assert vertices_2 == [v1, v2]
@@ -451,12 +450,7 @@ def test_serialization(graph):
     assert new_graph.num_edges() == graph.num_edges()
 
     new_edges = new_graph.iter_edges()
-    print("new_edges",new_edges)
-    # print(next(new_edges))
     edpts = new_graph.edge_endpoints(next(new_edges))
-    print("verticies")
-    for v in new_graph.iter_vertices():
-        print(v)
     ids = [new_graph.get_vertex_property(n, "id") for n in edpts] 
     assert ids == ["1", "2"]
     for vert1, vert2 in zip(graph.iter_vertices(), new_graph.iter_vertices()):
