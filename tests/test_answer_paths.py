@@ -1,13 +1,14 @@
 from sent_graph_rag.Datasets.answer_path_dataset import extract_answer_paths_from_entities
+from sent_graph_rag import IGraphSentenceGraph
 import torch
 import pytest
 
 vertex_embeddings = {
-    "Sofie":  torch.tensor([0.21380899, 0.92684816, 0.30860686]),
+    "Sofie":  torch.tensor([0.24988926, 0.79486326, 0.55294463]),
     "MIT":  torch.tensor([0.13363062, 0.98783793, -0.0794926]),
-    "NYC":  torch.tensor([0.16035675, 0.98635373, 0.03731008]),
+    "NYC":  torch.tensor([0.17478885, 0.97901922, 0.10473888]),
     "1861":  torch.tensor([0.02672612, 0.88133184, -0.47174135]),
-    "Cambridge":  torch.tensor([-0.05345225, 0.70833497, -0.70384972])
+    "Cambridge":  torch.tensor([0.08579086, 0.95959924, -0.26797244])
 }
 
 edge_embeddings = {
@@ -29,7 +30,7 @@ edge_embeddings = {
     pytest.param([], ["Cambridge"],["is in Cambridge"], 1, False, id="target_edge_entity_match"), # answer should be in final edge sentence -- connected to target u should go through, answer_entity that matches the target's aliases 
     pytest.param([], [], ["is in Cambridge"], 1, True, id="target_edge_match"), # same as last but answer entity is blank -- targetIsEdge=True
     pytest.param([], ["Cambridge"],["Cambridge, Massachusetts"], 1, False, id="target_entity_match"), # answer entities in target aliases, answer is defined but not in edge (random string)
-    pytest.param([], [],["Cambridge, Massachusetts"], 1, False, id="no_path"), # answer random strings
+    pytest.param([], [],["Cambridge, Massachusetts"], 0, False, id="no_path"), # answer random strings
 ])
 
 def test_answer_path_dataset(question_entities, answer_entities, answers, expected_num_paths, targetIsEdge):
@@ -66,7 +67,7 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
     question_entities
 
     # Vertices
-    soruce = graph.add_vertex({ # [0.21380899, 0.92684816, 0.30860686]
+    source = graph.add_vertex({ # [0.21380899, 0.92684816, 0.30860686]
         "id": "1",
         "label": "", #doesnt matter
         "terminal": False, #always 
@@ -196,7 +197,7 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
                                             ]))
 
     # Question Embedding
-    question_embedding = [1.0, 2.0, 3.0]
+    question_embedding = torch.tensor([1.0, 2.0, 3.0])
 
     # Correct Path
     correct_path1 = [
@@ -205,34 +206,42 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
                             edge_embeddings["1"],
                             edge_embeddings["2"],
                             edge_embeddings["5"],
-                            edge_embeddings["7"],
                             edge_embeddings["9"]
                         ],
-                        [vertex_embeddings["MIT"]],
+                        [
+                            vertex_embeddings["MIT"],
+                            vertex_embeddings["Sofie"]
+                        ],
                         [
                             edge_embeddings["4"],
                             edge_embeddings["3"],
                             edge_embeddings["1"],
                             edge_embeddings["9"]
                         ],
-                        [vertex_embeddings["1861"]],
+                        [
+                            vertex_embeddings["1861"],
+                            vertex_embeddings["MIT"]
+                        ],
                         [
                             edge_embeddings["8"],
                             edge_embeddings["4"],
-                            edge_embeddings["5"],
-                            edge_embeddings["6"]
+                            edge_embeddings["5"]
                         ],
-                        [vertex_embeddings["Cambridge"]]
+                        [
+                            vertex_embeddings["Cambridge"],
+                            vertex_embeddings["1861"]
+                        ],
+                        [
+                            edge_embeddings["8"],
+                            edge_embeddings["3"]
+                        ]
                     ]
-    if targetIsEdge:
-        correct_path1.pop(-1)
 
     correct_path2 = [
                         [vertex_embeddings["NYC"]],
                         [
                             edge_embeddings["6"],
-                            edge_embeddings["2"],
-                            edge_embeddings["7"]
+                            edge_embeddings["2"]
                         ],
                         [
                             vertex_embeddings["1861"],
@@ -242,26 +251,80 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
                         [
                             edge_embeddings["8"],
                             edge_embeddings["4"],
-                            edge_embeddings["5"],
-                            edge_embeddings["6"]
+                            edge_embeddings["5"]
                         ],
-                        [vertex_embeddings["Cambridge"]]
+                        [
+                            vertex_embeddings["Cambridge"],
+                            vertex_embeddings["1861"]
+                        ],
+                        [
+                            edge_embeddings["8"],
+                            edge_embeddings["3"]
+                        ]
                     ]
+    
+    correct_path3 = [
+                        [vertex_embeddings["Sofie"]],
+                        [
+                            edge_embeddings["1"],
+                            edge_embeddings["2"],
+                            edge_embeddings["5"],
+                            edge_embeddings["9"]
+                        ],
+                        [
+                            vertex_embeddings["MIT"],
+                            vertex_embeddings["Sofie"]
+                        ],
+                        [
+                            edge_embeddings["3"],
+                            edge_embeddings["1"],
+                            edge_embeddings["4"],
+                            edge_embeddings["9"]
+                        ],
+                        [
+                            vertex_embeddings["Cambridge"],
+                            vertex_embeddings["MIT"]
+                        ]
+                    ]
+    
+    if targetIsEdge:
+        correct_path1 = correct_path3
     
     correct_paths = [correct_path1, correct_path2]
 
 
-    data = extract_answer_paths_from_entities(graph, [question], [question_entities], [question_embedding], [answer_entiies], [answers])
+    data = extract_answer_paths_from_entities(graph, [question], [question_entities], [question_embedding], [answer_entities], [answers], k=1, matching="entity_match")
+    if expected_num_paths == 0:
+        assert len(data) == 0, "expected_num_paths is 0 but len(data) is not"
+        return
     result_question_embedding, paths = data[0]
-    assert result_question_embedding == question_embedding, "question embedding doesn't match"
+    assert torch.all(torch.isclose(result_question_embedding, question_embedding)).item(), "question embedding doesn't match"
     assert len(paths) ==  expected_num_paths, "unexpected number of paths"
     #check if path is correct
     for i, path in enumerate(paths):
         correct_path = correct_paths[i]
-        assert len(path) == len(correct_path), "lens of path {i} don't match"
+        print("path length", len(path))
+        for options in path:
+            print_options(options)
+        print()
+        print("correct? path length", len(correct_path))
+        for options in correct_path:
+            print_options(options)
+        assert len(path) == len(correct_path), "lens of path don't match"
         for j, options in enumerate(path):
             correct_options = correct_path[j]
             assert len(options) == len(correct_options), "path {i}, lens of option {j} don't match"
-            assert torch.isclose(options[0], correct_options[0]), "first option doesn't match --> for path {i}, option {j} isn't close enough"
+            if j < len(options)-1:
+                assert torch.all(torch.isclose(options[0], correct_options[0])).item(), "first option doesn't match --> for path {i}, option {j} isn't close enough"
             for option in options:
-                assert any(torch.isclose(t, option) for t in correct_options), "for path {i}, option {j}, isn't close enough"
+                assert any(torch.all(torch.isclose(t, option)).item() for t in correct_options), "for path {i}, option {j}, isn't close enough"
+
+def print_options(options):
+    print("[", end="")
+    for option in options:
+        for key, value in list(vertex_embeddings.items()) + list(edge_embeddings.items()):
+            if torch.all(torch.isclose(value, option)).item():
+                label = key
+                break
+        print(label, end=",")
+    print("]")

@@ -64,11 +64,16 @@ class SentenceGraph(ABC, Generic[V, E]):
         pass
     
     def add_vertex_embeddings(self, embeddings: torch.Tensor) -> None:
-        """Adds the embeddings to verticies. Embeddings are in the same order as verticies are yielded from the iter_vertices() method."""
+        """Adds the embeddings to verticies. Embeddings are in the same order as verticies are yielded from the iter_vertices() method.
+        Params:
+            embeddings: torch.Tensor shape (num_vertices, embedding_dim)"""
         pass
     
     def add_edge_embeddings(self, embeddings: torch.Tensor) -> None:
-        """Adds the embeddings to the edges. Embeddings are in the same order as edges are yielded from the iter_edges() method."""
+        """Adds the embeddings to the edges. Embeddings are in the same order as edges are yielded from the iter_edges() method.
+        Params:
+            embeddings: torch.Tensor shape (num_edges, embedding_dim)
+        """
         pass
     
     @abstractmethod
@@ -121,12 +126,20 @@ class SentenceGraph(ABC, Generic[V, E]):
     
     @abstractmethod
     def get_edge_embeddings(self) -> tuple[torch.Tensor, Iterator[E]]:
-        """Returns the embeddings for the edges. The first element of the tuple is a tensor of the embeddings and the second element is an iterator over the edges."""
+        """Returns the embeddings for the edges. The first element of the tuple is a tensor of the embeddings and the second element is an iterator over the edges.
+        Returns:
+            embeddings: torch.Tensor shape (num_edges, embedding_dim)
+            edges: iterator over the edges
+        """
         pass
     
     @abstractmethod
     def get_vertex_embeddings(self) -> tuple[torch.Tensor, Iterator[V]]:
-        """Returns the embeddings for the vertices. The first element of the tuple is a tensor of the embeddings and the second element is an iterator over the vertices."""
+        """Returns the embeddings for the vertices. The first element of the tuple is a tensor of the embeddings and the second element is an iterator over the vertices.
+        Returns
+            embeddings: torch.Tensor shape (num_vertices, embedding_dim)
+            vertices: iterator over the vertices
+        """
         pass
     
     @abstractmethod
@@ -251,14 +264,14 @@ class GraphToolSentenceGraph(SentenceGraph["gt.Vertex", "gt.Edge"]):
                 "vector<float>"
             )
         
-        self.graph.vertex_properties["embedding"].set_2d_array(embeddings)
+        self.graph.vertex_properties["embedding"].set_2d_array(embeddings.T)
     
     def add_edge_embeddings(self, embeddings: torch.Tensor) -> None:
         if "embedding" not in self.graph.edge_properties:
             self.graph.edge_properties["embedding"] = self.graph.new_edge_property(
                 "vector<float>"
             )
-        self.graph.edge_properties["embedding"].set_2d_array(embeddings)
+        self.graph.edge_properties["embedding"].set_2d_array(embeddings.T)
         
     def iter_vertices(self) -> Iterator["gt.Vertex"]:
         return self.graph.vertices()
@@ -454,8 +467,12 @@ class IGraphSentenceGraph(SentenceGraph[IGraphVertex, IGraphEdge]):
             self.filtered_edges = self.filtered_edges.select(transformed_fn)
             
         if filter_unconnected_vertices:
-            self.filtered_edges = self.filtered_edges.select(lambda v: v.outdegree() > 0)
-        
+            if self.filtered_vertices == None:
+                self.filtered_vertices = self.graph.vs.select()
+            remaining_edges = set([edge for edge in self.iter_edges()])
+            unconnected = lambda v: any((edge in remaining_edges) for edge in v.all_edges())
+            self.filtered_vertices = self.filtered_vertices.select(unconnected)
+
     def clear_filters(self) -> None:
         self.filtered_vertices = None
         self.filtered_edges = None

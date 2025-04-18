@@ -3,7 +3,7 @@ from spacy.language import Language
 import torch
 import gc
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict, Union, Optional
+from typing import List, Tuple, Dict, Union, Optional, Literal
 import numpy as np
 from numpy.linalg import norm
 import time
@@ -131,14 +131,14 @@ def shortest_path_to_edge_group(graph: SentenceGraph, start_node, edge_group):
 def get_similarity_weights(graph, query_embedding):
   remap_cos_sim = lambda x: 1-((x+1)/2)
   similarity_weight = lambda x: remap_cos_sim(cosine_similarity(x, query_embedding))
-  edge_embeddings = graph.edge_properties["embedding"].get_2d_array()
+  edge_embeddings, _ = graph.get_edge_embeddings()
 
-  query_embedding = np.array(query_embedding).reshape(1,384) #shape [1, 384]
-  edge_embeddings = edge_embeddings.T  # Shape: [num_edges, 384]
+  query_embedding = query_embedding.unsqueeze(0) #shape [1, embedding_dim]
+  edge_embeddings = edge_embeddings  # Shape: [num_edges, embedding_dim]
 
   # Step 2: Normalize query and edge_embeddings
-  query_norm = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)  # Shape: [1, 384]
-  edge_embeddings_norm = edge_embeddings / np.linalg.norm(edge_embeddings, axis=1, keepdims=True)  # Shape: [num_edges, 384]
+  query_norm = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)  # Shape: [1, embedding_dim]
+  edge_embeddings_norm = edge_embeddings / np.linalg.norm(edge_embeddings, axis=1, keepdims=True)  # Shape: [num_edges, embedding_dim]
 
   # Step 3: Compute cosine similarities
   cosine_similarities = np.dot(edge_embeddings_norm, query_norm.T).flatten()  # Shape: [num_edges]
@@ -224,21 +224,22 @@ def get_source_nodes(graph: SentenceGraph, query_entities, query_embedding, k = 
       if alias in query_entities:
         return True
     return False
-  query_embedding = np.array(query_embedding).reshape(1, 384)
+  # query_embedding = np.array(query_embedding).reshape(1, query_embedding.shape[0])
+  query_embedding = query_embedding.unsqueeze(0)
 
   graph.set_vertex_filter("aliases", filter_fn = matches_entity)
-  entity_matches = [v for v in graph.vertices()]
+  entity_matches = [v for v in graph.iter_vertices()]
   graph.clear_filters()
-  query_embedding = torch.from_numpy(query_embedding)
+  # query_embedding = torch.from_numpy(query_embedding)
 
   graph.set_vertex_filter("terminal", eq_value=False) # TODO: make sure this is correct.  
   # this is how it was done before with graph-toolgraph.set_vertex_filter(graph.vertex_properties["terminal"], inverted=True)
   # embedding_prop = graph.vertex_properties["embedding"]
   # embeddings = embedding_prop.get_2d_array().T
-  graph.get_vertex_embeddings()
-  query_embedding = query_embedding.double()
+  embeddings, _ = graph.get_vertex_embeddings()
+  # query_embedding = query_embedding.double()
 
-  embeddings = torch.from_numpy(embeddings)
+  # embeddings = torch.from_numpy(embeddings)
   query_norm = torch.norm(query_embedding)
 
   embeddings_norms = torch.norm(embeddings, dim=1)
@@ -259,7 +260,7 @@ def get_source_nodes(graph: SentenceGraph, query_entities, query_embedding, k = 
   return set(embedding_matches + entity_matches)
 
 
-def get_target_nodes(answer_entities: List[str], answers: List[str], graph: SentenceGraph, matching = "edge_match"):
+def get_target_nodes(answer_entities: List[str], answers: List[str], graph: SentenceGraph, matching: Literal["exact_match", "edge_entity_match", "edge_match", "entity_match"] = "edge_match"):
   """
   Get the target nodes from a graph that matche the answers to a query
   answer_entiies: The NER entities extracted from the answers
@@ -329,10 +330,12 @@ def get_target_nodes(answer_entities: List[str], answers: List[str], graph: Sent
   return entity_matches, False
 
 def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[str], all_query_entities: List[List[str]], 
-                                        all_query_embeddings: List[np.ndarray], all_answer_entities: List[List[str]], 
-                                        all_answers: List[List[str]], k: int = 3) -> List[Tuple[np.ndarray, List[List[List[np.ndarray]]]]]:
+                                        all_query_embeddings: List[torch.tensor], all_answer_entities: List[List[str]], 
+                                        all_answers: List[List[str]], k: int = 3, matching: Literal["exact_match", "edge_entity_match", "edge_match", "entity_match"] = "edge_match") -> List[Tuple[torch.tensor, List[List[List[torch.tensor]]]]]:
   """
   Extract answer paths from entities and embeddings
+  Parameters:
+    all_query_embeddings: list of torch.tensor with shape (embedding_dim)
   Returns:
     all_data: list of tuples of (query_embedding, embedding_data)
       embedding_data: list of paths
@@ -351,7 +354,7 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
     source_nodes = get_source_nodes(graph, query_entities, query_embedding, k = k)
     # print("Found Source nodes", time.time() - start)
     # start = time.time()
-    targets, targets_are_edges = get_target_nodes(answer_entities, answers, graph, matching = "edge_match")
+    targets, targets_are_edges = get_target_nodes(answer_entities, answers, graph, matching = matching)
     # print("Found target nodes", time.time() - start)
 
     if len(source_nodes) == 0 or len(targets) == 0:
@@ -367,7 +370,6 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
     paths = []
     counter = 0
     # start = time.time()
-    # TODO: change to shortest_paths implementation
     for source in source_nodes:
       if targets_are_edges:
         for target in targets:
@@ -377,9 +379,9 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
             paths.append(path)
       else:
         # sub_start = time.time()
-        paths = graph.shortest_paths(source, targets)
+        source_paths = graph.shortest_paths(source, targets)
         # print("Found Shortest path to node", time.time() - start)
-        paths.extend([path for path in paths if len(path[0]) != 0])
+        paths.extend([path for path in source_paths if len(path[0]) != 0])
     # print("Found Shortest paths", time.time() - start)
     if len(paths) == 0:
       # graph.clear_filters()
@@ -412,6 +414,8 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
     embedding_data = []
     # loop_start = time.time()
     for path, edge_list in paths:
+      # print("PATH")
+      # print(path)
       path_data = [] #list of list of options [[v1a], [e1a, e1b, e1c], [v2a, v2b, v2c], [e3a, e3b, e3c], [v4a, v4b, v4c]] first option is always correct
       # [query1, [v1a], [e1a, e1b, e1c]],
       # [query1, [v1a, e1a], [v2a, v2b, v2c]],
@@ -424,7 +428,7 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
 
         if i == 0:
           path_data.append([source_node])
-          embedding = list(graph.get_vertex_property(source_node, 'embedding'))
+          embedding = graph.get_vertex_property(source_node, 'embedding')
           path_embedding_data.append([embedding])
 
         # add all edge options for correct node
@@ -437,7 +441,7 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
             added_sentences.add(graph.get_edge_property(edge_option, 'sentence'))
         row = [edge] + incorrect_edges
         path_data.append(row)
-        path_embedding_data.append([list(graph.get_edge_property(e, 'embedding')) for e in row])
+        path_embedding_data.append([graph.get_edge_property(e, 'embedding') for e in row])
 
         # print("added edge options:", time.time() - start)
         # add all node options for correct edge
@@ -450,15 +454,15 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
           added_nodes = set([target_node])
           incorrect_nodes = []
           # start = time.time()
-          for e in graph.edges():
-            for n in (e.source(), e.target()):
+          for e in graph.iter_edges():
+            for n in graph.edge_endpoints(e):
               if n not in added_nodes:
                 incorrect_nodes.append(n)
                 added_nodes.add(n)
           # print("added all incorrect nodes to graph", time.time() - start)
           row = [target_node] + incorrect_nodes
           path_data.append(row)
-          path_embedding_data.append([list(graph.get_vertex_property(n, 'embedding')) for n in row])
+          path_embedding_data.append([graph.get_vertex_property(n, 'embedding') for n in row])
           graph.clear_filters()
         # print("single iteration time:" , time.time() - iter_start)
 
@@ -467,17 +471,17 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
       if graph.is_edge(last_step):
         last_node = path_data[-2][0]
         graph.set_edge_filter("sentence", eq_value = graph.get_edge_property(last_step, 'sentence'))
-        added_nodes = set([last_node])
+        added_nodes = set()
         incorrect_nodes = []
-        for e in graph.edges():
+        for e in graph.iter_edges():
           for n in graph.edge_endpoints(e):
             if n not in added_nodes:
               incorrect_nodes.append(n)
               added_nodes.add(n)
         graph.clear_filters()
-        row = [None] + incorrect_nodes
+        row = incorrect_nodes
         path_data.append(row)
-        path_embedding_data.append([None] + [list(graph.get_vertex_property(n, 'embedding')) for n in incorrect_nodes])
+        path_embedding_data.append([graph.get_vertex_property(n, 'embedding') for n in incorrect_nodes])
       else:
         incorrect_edges = []
         added_sentences = set()
@@ -485,10 +489,9 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
           if graph.get_edge_property(edge_option, 'sentence') not in added_sentences:
             incorrect_edges.append(edge_option)
             added_sentences.add(graph.get_edge_property(edge_option, 'sentence'))
-        row = [None] + incorrect_edges
+        row = incorrect_edges
         path_data.append(row)
-        path_embedding_data.append([None] + [list(graph.get_edge_property(e, 'embedding')) for e in incorrect_edges])
-
+        path_embedding_data.append([graph.get_edge_property(e, 'embedding') for e in incorrect_edges])
       data.append(path_data)
       embedding_data.append(path_embedding_data)
 
@@ -499,12 +502,12 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
     #     if i % 2 == 0:
     #       print("VERTEX OPTIONS")
     #       for v in options:
-    #         print(graph.vertex_properties['label'][v])
+    #         print(v)
     #         print("--------------------------------------------")
     #     else:
     #       print("EDGE OPTIONS")
     #       for e in options:
-    #         print(graph.edge_properties['sentence'][e])
+    #         print(e)
     #         print("--------------------------------------------")
     #   print("PATH END")
 
