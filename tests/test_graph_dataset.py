@@ -91,7 +91,7 @@ class DemoReader(DatasetReader):
         
 def test_graph_dataset(load_model):
     # Test dataset
-    test_reader = TestReader("test.json")
+    test_reader = DemoReader("test.json")
     graph_dataset = SentenceGraphDataset.from_dataset(test_reader, out_path="test_graph_datset.avro", graph_type="igraph", language_model=load_model, chunk_size=5, overwrite=True)
 
     with open("test.json", "r") as f:

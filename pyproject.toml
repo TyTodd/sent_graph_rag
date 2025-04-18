@@ -29,7 +29,8 @@ dependencies = [
     "disjoint_set",
     "fastavro",
     "lmdb",
-    "igraph"
+    "igraph",
+    "tqdm"
 
 ]
 

@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict, Union, Optional
 import time
 from sentence_transformers import SentenceTransformer
 from datasets.utils.logging import disable_progress_bar
+import fastcoref
     
 class EmbeddingModel(ABC):
     @abstractmethod
