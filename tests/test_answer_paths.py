@@ -1,4 +1,4 @@
-from sent_graph_rag.Datasets.answer_path_dataset import extract_answer_paths_from_entities
+from sent_graph_rag.Datasets.answer_path_dataset import extract_answer_paths_from_entities, expand_answer_path_data
 from sent_graph_rag import IGraphSentenceGraph
 import torch
 import pytest
@@ -23,48 +23,9 @@ edge_embeddings = {
     "9":  torch.tensor([-0.05345225, 0.70833497, -0.70384972])
 }
 
-@pytest.mark.parametrize("question_entities, answer_entities, answers, expected_num_paths, targetIsEdge", [
-    pytest.param(["New York"], [],["Cambridge"], 2, False, id="source_entity_match"), # 1 of question_entities is in least similar vertex aliases, 4
-    #question entity empty, 3
-    pytest.param([], [],["Cambridge"], 1, False, id="target_exact_match"), # answer should be an alias of target
-    pytest.param([], ["Cambridge"],["is in Cambridge"], 1, False, id="target_edge_entity_match"), # answer should be in final edge sentence -- connected to target u should go through, answer_entity that matches the target's aliases 
-    pytest.param([], [], ["is in Cambridge"], 1, True, id="target_edge_match"), # same as last but answer entity is blank -- targetIsEdge=True
-    pytest.param([], ["Cambridge"],["Cambridge, Massachusetts"], 1, False, id="target_entity_match"), # answer entities in target aliases, answer is defined but not in edge (random string)
-    pytest.param([], [],["Cambridge, Massachusetts"], 0, False, id="no_path"), # answer random strings
-])
-
-def test_answer_path_dataset(question_entities, answer_entities, answers, expected_num_paths, targetIsEdge):
-    '''
-    What it do
-    1. Finds nodes that are in the graph that are similar to the question
-        Testing functions directly by making a test graph
-        Defining our own embeddings (3D vectors)
-    2. 
-    
-    (1) Make a graph (6 verticies)
-        1-ideal source node (most related to question, has to have the same entities/aliases as the question)
-        1-ideal target node (most related to answer; exact match, edge entitiy match, edge match, entity match)
-        4-other nodes
-        2 paths from source to target
-        should return shortest path
-
-    (2) Run from answer path dataset -- extract answer paths from entities 
-        Takes in graph, question, question eneitirs, embeddings, answer + answer entities 
-        2 questions
-        Have an expected path that should be returned 
-
-        question_entities -- should be 1 of the aliases from the source node, in another test it shouldnt be
-        each edge sentence should be different
-            target edge in 1 case should contain an answer entity (no answer)
-            in another should have answer but not answer entity
-            another case - within nodes aliases contains just the answer
-            case - within the target node the answer is not in aliases but one of the answer's entities are in the aliases
-
-    '''
+def create_graph():
     # Graph Creation
     graph = IGraphSentenceGraph("test corpus")
-    question = "What city does Sofie go to school in?"
-    question_entities
 
     # Vertices
     source = graph.add_vertex({ # [0.21380899, 0.92684816, 0.30860686]
@@ -195,6 +156,50 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
                                             vertex_embeddings["1861"],
                                             vertex_embeddings["Cambridge"]
                                             ]))
+    return graph
+
+@pytest.mark.parametrize("question_entities, answer_entities, answers, expected_num_paths, targetIsEdge", [
+    pytest.param(["New York"], [],["Cambridge"], 2, False, id="source_entity_match"), # 1 of question_entities is in least similar vertex aliases, 4
+    #question entity empty, 3
+    pytest.param([], [],["Cambridge"], 1, False, id="target_exact_match"), # answer should be an alias of target
+    pytest.param([], ["Cambridge"],["is in Cambridge"], 1, False, id="target_edge_entity_match"), # answer should be in final edge sentence -- connected to target u should go through, answer_entity that matches the target's aliases 
+    pytest.param([], [], ["is in Cambridge"], 1, True, id="target_edge_match"), # same as last but answer entity is blank -- targetIsEdge=True
+    pytest.param([], ["Cambridge"],["Cambridge, Massachusetts"], 1, False, id="target_entity_match"), # answer entities in target aliases, answer is defined but not in edge (random string)
+    pytest.param([], [],["Cambridge, Massachusetts"], 0, False, id="no_path"), # answer random strings
+])
+
+
+def test_answer_path_dataset(question_entities, answer_entities, answers, expected_num_paths, targetIsEdge):
+    '''
+    What it do
+    1. Finds nodes that are in the graph that are similar to the question
+        Testing functions directly by making a test graph
+        Defining our own embeddings (3D vectors)
+    2. 
+    
+    (1) Make a graph (6 verticies)
+        1-ideal source node (most related to question, has to have the same entities/aliases as the question)
+        1-ideal target node (most related to answer; exact match, edge entitiy match, edge match, entity match)
+        4-other nodes
+        2 paths from source to target
+        should return shortest path
+
+    (2) Run from answer path dataset -- extract answer paths from entities 
+        Takes in graph, question, question eneitirs, embeddings, answer + answer entities 
+        2 questions
+        Have an expected path that should be returned 
+
+        question_entities -- should be 1 of the aliases from the source node, in another test it shouldnt be
+        each edge sentence should be different
+            target edge in 1 case should contain an answer entity (no answer)
+            in another should have answer but not answer entity
+            another case - within nodes aliases contains just the answer
+            case - within the target node the answer is not in aliases but one of the answer's entities are in the aliases
+
+    '''
+    # # Graph Creation
+    graph = create_graph()
+    question = "What city does Sofie go to school in?"
 
     # Question Embedding
     question_embedding = torch.tensor([1.0, 2.0, 3.0])
@@ -303,11 +308,6 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
     #check if path is correct
     for i, path in enumerate(paths):
         correct_path = correct_paths[i]
-        print("path length", len(path))
-        for options in path:
-            print_options(options)
-        print()
-        print("correct? path length", len(correct_path))
         for options in correct_path:
             print_options(options)
         assert len(path) == len(correct_path), "lens of path don't match"
@@ -320,6 +320,7 @@ def test_answer_path_dataset(question_entities, answer_entities, answers, expect
                 assert any(torch.all(torch.isclose(t, option)).item() for t in correct_options), "for path {i}, option {j}, isn't close enough"
 
 def print_options(options):
+    label = ""
     print("[", end="")
     for option in options:
         for key, value in list(vertex_embeddings.items()) + list(edge_embeddings.items()):
@@ -328,3 +329,118 @@ def print_options(options):
                 break
         print(label, end=",")
     print("]")
+
+def test_expand_answer_path_data():
+    question_embedding = torch.tensor([1.0, 2.0, 3.0])
+    correct_path_so_far = [
+                            [
+                                vertex_embeddings["Sofie"]
+                            ],
+                            [
+                                vertex_embeddings["Sofie"],
+                                edge_embeddings["1"]
+                            ],
+                            [
+                                vertex_embeddings["Sofie"],
+                                edge_embeddings["1"],
+                                vertex_embeddings["MIT"]
+                            ],
+                            [
+                                vertex_embeddings["Sofie"],
+                                edge_embeddings["1"],
+                                vertex_embeddings["MIT"],
+                                edge_embeddings["4"]
+                            ],
+                            [
+                                vertex_embeddings["Sofie"],
+                                edge_embeddings["1"],
+                                vertex_embeddings["MIT"],
+                                edge_embeddings["4"],
+                                vertex_embeddings["1861"]
+                            ],
+                            [
+                                vertex_embeddings["Sofie"],
+                                edge_embeddings["1"],
+                                vertex_embeddings["MIT"],
+                                edge_embeddings["4"],
+                                vertex_embeddings["1861"],
+                                edge_embeddings["8"]
+                            ],
+                            [
+                                vertex_embeddings["Sofie"],
+                                edge_embeddings["1"],
+                                vertex_embeddings["MIT"],
+                                edge_embeddings["4"],
+                                vertex_embeddings["1861"],
+                                edge_embeddings["8"],
+                                vertex_embeddings["Cambridge"]
+                            ],
+                        ]
+
+    correct_options = [
+                            [ #sofie
+                                edge_embeddings["1"],
+                                edge_embeddings["2"],
+                                edge_embeddings["5"],
+                                edge_embeddings["9"]
+                            ],
+                            [ #sofie, 1
+                                vertex_embeddings["MIT"],
+                                vertex_embeddings["Sofie"],
+                            ],
+                            [ #sofie, 1, MIT
+                                edge_embeddings["4"],
+                                edge_embeddings["3"],
+                                edge_embeddings["1"],
+                                edge_embeddings["9"]
+                            ],
+                            [ #sofie, 1, MIT, 4
+                                vertex_embeddings["1861"],
+                                vertex_embeddings["MIT"]
+                            ],
+                            [ #sofie, 1, MIT, 4, 1861
+                                edge_embeddings["8"],
+                                edge_embeddings["4"],
+                                edge_embeddings["5"]
+                            ],
+                            [ #sofie, 1, MIT, 4, 1861, 8
+                                vertex_embeddings["Cambridge"],
+                                vertex_embeddings["1861"]
+                            ],
+                            [ #sofie, 1, MIT, 4, 1861, Cambridge
+                                torch.tensor([float("nan"), float("nan"), float("nan")]),
+                                edge_embeddings["3"],
+                                edge_embeddings["8"]
+                            ]
+                        ]
+    correct_expanded_data = []
+    for path_so_far, options in zip(correct_path_so_far, correct_options):
+        correct_expanded_data.append((question_embedding, path_so_far, options))
+    
+    graph = create_graph()
+    question = "What city does Sofie go to school in?"
+    data = extract_answer_paths_from_entities(graph, [question], [[]], [question_embedding], [[]], [["Cambridge"]], k=1, matching="entity_match")
+
+    expanded_data = expand_answer_path_data(data, 3)
+
+    #Check if overall lengths are the same
+    assert len(expanded_data) == len(correct_expanded_data), "overall lengths are not equal"
+
+    for correct_training_row, training_row in zip(correct_expanded_data, expanded_data):
+        #checking question embedding
+        assert torch.all(torch.isclose(correct_training_row[0], training_row[0])).item(), "question embedding doesn't match"
+        
+        #checking path so far
+        assert len(correct_training_row[1]) == len(training_row[1]), "lengths of path(s)_so_far aren't equal"
+        assert torch.all(torch.isclose(torch.stack(correct_training_row[1]), torch.stack(training_row[1]))).item(), "path(s)_so_far don't match"
+        
+        #check options
+        correct_options = correct_training_row[2]
+        options = training_row[2]
+        assert len(correct_options) == len(options), "lengths of options aren't equal"
+        if not((torch.isnan(options[0]) & torch.isnan(correct_options[0])).all().item()):
+            assert torch.all(torch.isclose(options[0], correct_options[0])).item(), "first option doesn't match"
+        for option in options[1:]:
+            assert any(torch.all(torch.isclose(t, option)).item() for t in correct_options), "option wasn't found in correct_options"
+
+

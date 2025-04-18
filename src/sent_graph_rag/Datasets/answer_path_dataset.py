@@ -211,7 +211,7 @@ def get_answer_path_rows(graph_dataset: SentenceGraphDataset, k: int = 3):
     all_answer_entities = record["answer_entities"]
     all_answers = record["answers"]
     answer_paths = extract_answer_paths_from_entities(graph, all_queries, all_query_entities, all_query_embeddings, all_answer_entities, all_answers, k)
-    expanded_answer_paths = expand_answer_path_data(answer_paths)
+    expanded_answer_paths = expand_answer_path_data(answer_paths, embedding_dim)
     for row in expanded_answer_paths:
       yield row
       
@@ -518,7 +518,7 @@ def extract_answer_paths_from_entities(graph: SentenceGraph, all_queries: List[s
     # print("LENGTYH inner end",len(all_data[0][1][-1]), len(embedding_data[0][1][-1]))
   return all_data
   
-def expand_answer_path_data(data: List[Tuple[np.ndarray, List[List[List[np.ndarray]]]]]) -> List[Tuple[np.ndarray, List[np.ndarray], List[np.ndarray]]]:
+def expand_answer_path_data(data: List[Tuple[np.ndarray, List[List[List[np.ndarray]]]]], embedding_dim) -> List[Tuple[torch.tensor, List[torch.tensor], List[torch.tensor]]]:
   """
   Expand the answer path data to include all possible paths
   Params:
@@ -537,8 +537,11 @@ def expand_answer_path_data(data: List[Tuple[np.ndarray, List[List[List[np.ndarr
   for query_embedding, embedding_data in data:
     for path in embedding_data:
       path_so_far = [path[0][0]] # first list in the options list always has a single vertex. (start node)
-      for options in path[1:]:
-        expanded_data.append((query_embedding, path_so_far, options))
+      for i, options in enumerate(path[1:], start=1):
+        if i == len(path)-1:
+          expanded_data.append((query_embedding, path_so_far.copy(), [torch.full((embedding_dim,), float('nan'))] + options))
+        else:
+          expanded_data.append((query_embedding, path_so_far.copy(), options))
         path_so_far.append(options[0])
   return expanded_data
 
